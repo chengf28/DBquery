@@ -1,0 +1,19 @@
+{
+    "name": "chengf28/db-lite",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "chengf28",
+            "email": "chengf_28@163.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "DBlite\\": "src/"
+        }
+    }
+}
