@@ -13,11 +13,15 @@ class QueryBuilder
 	protected $query = 
 	[
 		'select' => [],
-		'where'  => [],
+		'from'   => [],
 		'join'   => [],
+		'where'  => [],
 		'order'  => [],
 		'group'  => [],
 	];
+
+
+	protected $table;
 
 	protected $columns;
 
@@ -26,9 +30,10 @@ class QueryBuilder
 		
 	// }
 
-	public function table($table)
+	public function table( string $table)
 	{
-		
+		$this->table = $table;
+		return $this;	
 	}
 	#-----------------------------
 	# select 类型
@@ -54,6 +59,60 @@ class QueryBuilder
 	public function where( $columns , $operator = null , $value , $type = 'and' )
 	{
 		
+	}
+
+
+
+	#-----------------------------
+	# 创建语句
+	#-----------------------------
+	
+
+	public function get( $columns = ['*'] )
+	{
+		if ( is_null($this->columns) ) 
+		{
+			$this->select($columns);
+		}
+		return $this->sqlCreate();
+	}
+
+	protected function sqlCreate()
+	{
+		foreach ($this->query as $key => &$value) 
+		{
+			$method = 'sql'.ucfirst($key);
+			$value = $this->$method();
+		}
+		unset($value);
+		// select 语句
+	}
+
+	protected function sqlSelect()
+	{
+		if (is_null($this->columns)) 
+		{
+			return '';
+		}
+		$columns = implode(',', $this->columns);
+		return 'select '.$columns;
+	}
+
+	protected function sqlFrom()
+	{
+		return 'from '.$this->table;
+	}
+
+	protected function sqlJoin(){}
+	protected function sqlWhere(){}
+	protected function sqlOrder(){}
+	protected function sqlGroup(){}
+	#-----------------------------
+	# 测试
+	#-----------------------------
+	private function error( $msg = 'Error .....')
+	{
+		throw new Exception($msg);
 	}
 }
 
