@@ -20,6 +20,9 @@ class QueryBuilder
 		'group'  => [],
 	];
 
+	protected $operator = [
+		'=','>','<>','<','like','!=','<=','>=','+','-','/','*','%','IS NULL','IS NOT NULL','LEAST','GREATEST','BETWEEN','IN','NOT BETWEEN','NOT IN','REGEXP'
+	];
 
 	protected $table;
 
@@ -48,36 +51,62 @@ class QueryBuilder
 	 */
 	public function select( $columns = ['*'] )
 	{
-		 $this->columns = is_array($columns) ? $columns : func_get_args();
-		 return $this;
+		$this->columns = is_array($columns) ? $columns : func_get_args();
+		return $this;
 	}
+
+
+
 
 	#-----------------------------
 	# where 条件
 	#-----------------------------
-	
-	public function where( $columns , $operator = null , $value , $type = 'and' )
+
+	public function where( $columns , $operator = null , $value = null , $type = 'and' )
 	{
-		
+		$args_num = func_num_args();
+		// 如果丢进来的是一个二维数组
+		if ( is_array($columns) && $args_num == 1 )
+		{
+			foreach ($columns as $values) 
+			{
+				if ( is_array($values) ) 
+				{
+					$this->where(...$values);
+				}else{
+					$this->error('QueryBuilder::where() expects parameter 1 to be array, string given');
+				}
+			}
+		}
+		// 如果只有2个参数,则执行
+		if( $args_num == 2 )
+		{
+			if (!in_array( strtoupper($operator),$this->operator )) 
+			{
+				$this->where[] = [$columns,'=',$operator,$type];
+			}else{
+				$this->error('IS EMPTY VALUES');	
+			}
+		}elseif($args_num > 2 )
+		{
+			$this->where[] = [$columns,$operator,$value,$type];
+		}
+		return $this;
 	}
-
-
 
 	#-----------------------------
 	# 创建语句
 	#-----------------------------
-	
-
 	public function get( $columns = ['*'] )
 	{
 		if ( is_null($this->columns) ) 
 		{
 			$this->select($columns);
 		}
-		return $this->sqlCreate();
+		return $this->selectCreate();
 	}
 
-	protected function sqlCreate()
+	protected function selectCreate()
 	{
 		foreach ($this->query as $key => &$value) 
 		{
@@ -94,8 +123,8 @@ class QueryBuilder
 		{
 			return '';
 		}
-		$columns = implode(',', $this->columns);
-		return 'select '.$columns;
+		$columns = str_replace('.','`.`',implode('`,`', $this->columns));
+		return 'select `'.$columns.'`';
 	}
 
 	protected function sqlFrom()
@@ -104,15 +133,24 @@ class QueryBuilder
 	}
 
 	protected function sqlJoin(){}
-	protected function sqlWhere(){}
+	protected function sqlWhere()
+	{
+		$where = [];
+		foreach ($this->where as $columns) 
+		{
+		}
+	}
 	protected function sqlOrder(){}
 	protected function sqlGroup(){}
+	
+
 	#-----------------------------
-	# 测试
+	# 工具
 	#-----------------------------
+
 	private function error( $msg = 'Error .....')
 	{
-		throw new Exception($msg);
+		throw new \Exception($msg);
 	}
 }
 
