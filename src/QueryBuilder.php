@@ -16,22 +16,31 @@ class QueryBuilder
 		'from'   => [],
 		'join'   => [],
 		'where'  => [],
-		'order'  => [],
 		'group'  => [],
+		'order'  => [],
 	];
 
 	protected $operator = [
 		'=','>','<>','<','like','!=','<=','>=','+','-','/','*','%','IS NULL','IS NOT NULL','LEAST','GREATEST','BETWEEN','IN','NOT BETWEEN','NOT IN','REGEXP'
 	];
 
+	/**
+	 * 表
+	 * @var string
+	 */
 	protected $table;
 
+	/**
+	 * select 字段
+	 * @var array
+	 */
 	protected $columns;
 
-	// function __construct()
-	// {
-		
-	// }
+	/**
+	 * where 条件
+	 * @var array
+	 */
+	protected $wheres;
 
 	public function table( string $table)
 	{
@@ -41,116 +50,89 @@ class QueryBuilder
 	#-----------------------------
 	# select 类型
 	#-----------------------------
-	
-	/**
-	 * 添加查询字段
-	 * @author: chengf28
-	 * God Bless the Code
-	 * @param  array  $columns 需要查找的字段默认为 *所有
-	 * @return this
-	 */
 	public function select( $columns = ['*'] )
 	{
 		$this->columns = is_array($columns) ? $columns : func_get_args();
 		return $this;
 	}
 
-
-
-
 	#-----------------------------
-	# where 条件
+	# where 类型
 	#-----------------------------
-
-	public function where( $columns , $operator = null , $value = null , $type = 'and' )
+	public function where( $column , $operator = NULL, $value = NULL, $type = 'and')
 	{
-		$args_num = func_num_args();
-		// 如果丢进来的是一个二维数组
-		if ( is_array($columns) && $args_num == 1 )
+		if (is_array($column)) 
 		{
-			foreach ($columns as $values) 
-			{
-				if ( is_array($values) ) 
-				{
-					$this->where(...$values);
-				}else{
-					$this->error('QueryBuilder::where() expects parameter 1 to be array, string given');
-				}
-			}
+			$this->arrayWhereColumn( $column );
 		}
-		// 如果只有2个参数,则执行
-		if( $args_num == 2 )
+		// 如果是匿名函数
+		if ($column instanceof \Closure)
 		{
-			if (!in_array( strtoupper($operator),$this->operator )) 
-			{
-				$this->where[] = [$columns,'=',$operator,$type];
-			}else{
-				$this->error('IS EMPTY VALUES');	
-			}
-		}elseif($args_num > 2 )
-		{
-			$this->where[] = [$columns,$operator,$value,$type];
+			$this->anonymousWhere($column);
 		}
+
+		if ( func_num_args() == 2 && !$this->isOperator($operator) ) 
+		{
+			$value    = $operator;
+			$operator = '=';
+		}
+		$this->wheres[] = compact('column','operator','value','type');
+		$this->addbind($value,'where');
 		return $this;
 	}
 
-	#-----------------------------
-	# 创建语句
-	#-----------------------------
-	public function get( $columns = ['*'] )
-	{
-		if ( is_null($this->columns) ) 
-		{
-			$this->select($columns);
-		}
-		return $this->selectCreate();
-	}
-
-	protected function selectCreate()
-	{
-		foreach ($this->query as $key => &$value) 
-		{
-			$method = 'sql'.ucfirst($key);
-			$value = $this->$method();
-		}
-		unset($value);
-		// select 语句
-	}
-
-	protected function sqlSelect()
-	{
-		if (is_null($this->columns)) 
-		{
-			return '';
-		}
-		$columns = str_replace('.','`.`',implode('`,`', $this->columns));
-		return 'select `'.$columns.'`';
-	}
-
-	protected function sqlFrom()
-	{
-		return 'from '.$this->table;
-	}
-
-	protected function sqlJoin(){}
-	protected function sqlWhere()
-	{
-		$where = [];
-		foreach ($this->where as $columns) 
-		{
-		}
-	}
-	protected function sqlOrder(){}
-	protected function sqlGroup(){}
 	
 
 	#-----------------------------
-	# 工具
+	# tool 类型
 	#-----------------------------
 
-	private function error( $msg = 'Error .....')
+	protected function isOperator( $operator )
 	{
-		throw new \Exception($msg);
+		return in_array($operator, $this->operator);
+	}
+
+	protected function columnWarp( $column )
+	{
+		if ( is_array( $column ) ) 
+		{
+			return $this->arrayColumn( $column );
+		}
+		return '`'.str_replace('.', '`.`', $column ).'`';
+	}
+
+	protected function arrayColumn( array $columns )
+	{
+		foreach ( $columns as $key => &$value )
+		{
+			$value = $this->columnWarp($value);
+		}
+		unset($value);
+		return join(',', $columns);
+	}
+
+	protected function arrayWhereColumn( $columns )
+	{
+		foreach ($columns as $key => $value) 
+		{
+			if( is_array($value) && is_numeric($value) )
+			{
+				$this->where(...$value);
+			}else{
+				$this->where($key,'=',$value);
+			}
+		}
+	}
+
+	protected function anonymousWhere( $fun )
+	{
+		// 新建类单独处理
+		call_user_func($fun,$this);
+	}
+
+	protected function addbind($value , $type = 'where')
+	{
+		$this->query[$type][] = $value;
 	}
 }
 
