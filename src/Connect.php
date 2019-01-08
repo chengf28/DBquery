@@ -1,5 +1,6 @@
 <?php
 namespace DBlite;
+use \PDO;
 /*
 |---------------------------------------
 | @author Chenguifeng
@@ -10,8 +11,19 @@ namespace DBlite;
 */
 class Connect
 {
+
+	protected $readPdo;
+
+	protected $pdo;
+
     function __construct()
+	{
+
+	}
+
+	public function statementExecute()
 	{
 		
 	}
+
 }

@@ -40,7 +40,7 @@ class QueryBuilder
 	 * where 条件
 	 * @var array
 	 */
-	protected $wheres;
+	public $wheres;
 
 	public function table( string $table)
 	{
@@ -56,6 +56,16 @@ class QueryBuilder
 		return $this;
 	}
 
+	public function get( $columns = ['*'] )
+	{
+		if ( empty($this->columns) ) 
+		{
+			$this->select($columns);
+		}
+		var_dump($this->toSql());
+		var_dump($this->getBind());
+	}
+
 	#-----------------------------
 	# where 类型
 	#-----------------------------
@@ -63,12 +73,12 @@ class QueryBuilder
 	{
 		if (is_array($column)) 
 		{
-			$this->arrayWhereColumn( $column );
+			return $this->arrayWhereColumn( $column );
 		}
-		// 如果是匿名函数
+		// 如果是匿名函数(暂时不处理)
 		if ($column instanceof \Closure)
 		{
-			$this->anonymousWhere($column);
+			return $this->anonymousWhere($column);
 		}
 
 		if ( func_num_args() == 2 && !$this->isOperator($operator) ) 
@@ -86,6 +96,66 @@ class QueryBuilder
 	#-----------------------------
 	# tool 类型
 	#-----------------------------
+	/**
+	 * Undocumented function
+	 * @return void
+	 */
+	public function getBind( $type = 'where')
+	{
+		return isset($this->query[$type]) ? $this->query[$type] : [];
+	}
+
+	protected function addbind($value , $type = 'where')
+	{
+		$this->query[$type][] = $value;
+	}
+
+	protected function toSql()
+	{
+		$sql = [];
+		foreach ($this->query as $method => $value) 
+		{
+			$sql[$method] = trim($this->{'complete'.ucfirst($method)}());
+		}
+		return implode(' ',array_filter($sql,function($value)
+		{
+			return (string) $value !== '';
+		}));
+	}
+
+	protected function completeSelect()
+	{
+		if ( is_null($this->columns) )
+		{
+			$this->columns(['*']);
+		}
+		return "select ".$this->columnWarp($this->columns);
+	}
+
+	protected function completeFrom()
+	{
+		return "from {$this->table}";
+	}
+
+	protected function completeJoin(){}
+
+	protected function completeWhere()
+	{
+		$sql = '';
+		if (!empty($this->wheres)) 
+		{
+			foreach ($this->wheres as $where)
+			{
+				$sql .= $this->columnWarp($where['column']).' '.$where['operator'] .' ? '.$where['type'].' ';
+			}
+		}
+		return trim($sql,'and');
+	}
+
+	protected function completeGroup(){}
+
+	protected function completeOrder(){}
+
 
 	protected function isOperator( $operator )
 	{
@@ -94,6 +164,10 @@ class QueryBuilder
 
 	protected function columnWarp( $column )
 	{
+		if ($column == '*') 
+		{
+			return '*';
+		}
 		if ( is_array( $column ) ) 
 		{
 			return $this->arrayColumn( $column );
@@ -115,24 +189,23 @@ class QueryBuilder
 	{
 		foreach ($columns as $key => $value) 
 		{
-			if( is_array($value) && is_numeric($value) )
+			if( is_array($value) && is_numeric($key) )
 			{
 				$this->where(...$value);
 			}else{
 				$this->where($key,'=',$value);
 			}
 		}
+		return $this;
 	}
 
 	protected function anonymousWhere( $fun )
 	{
 		// 新建类单独处理
 		call_user_func($fun,$this);
+		return $this;
 	}
 
-	protected function addbind($value , $type = 'where')
-	{
-		$this->query[$type][] = $value;
-	}
+	
 }
 
