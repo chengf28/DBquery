@@ -2,8 +2,9 @@
 require_once __DIR__."/../vendor/autoload.php";
 use DBlite\QueryBuilder;
 use DBlite\Connect;
+use DBlite\DBlite;
 
-$conec = '';
+$conec = DBlite::config();
 
 // $test = new QueryBuilder;
 // $test->table('test as tb1')->where([['key1','like','%www%']])->where('key2','>',2)->get();
