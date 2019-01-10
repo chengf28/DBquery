@@ -18,21 +18,19 @@ class Connect
 
 	protected $useReadPdo = false;
 
-    function __construct()
+    function __construct( PDO $pdo )
 	{
-		
+		$this->pdo = $pdo;
 	}
 
 	public function setReadPdo( PDO $pdo )
 	{
-		$this->readPdo    = $pdo;
-		$this->useReadPdo = true;
+		$this->readPdo = $pdo;
 	}
 
 	public function unsetReadPdo()
 	{
-		$this->readPdo    = NULL;
-		$this->useReadPdo = false;
+		$this->readPdo = NULL;
 	}
 
 	public function transaction()

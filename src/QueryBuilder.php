@@ -66,6 +66,17 @@ class QueryBuilder
 		var_dump($this->getBind());
 	}
 
+	/**
+	 * `get`的别名
+	 * @author: chengf28
+	 * God Bless the Code
+	 * @return array
+	 */
+	public function all()
+	{
+		unset($this->columns);
+		return $this->get();
+	}
 	#-----------------------------
 	# where 类型
 	#-----------------------------
