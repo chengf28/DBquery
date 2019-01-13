@@ -27,10 +27,10 @@ $config = [
 ];
 
 try{
-$conec = DBlite::config($config);
+    $conec = DBlite::config($config);
 }catch(\Exception $e)
 {
-var_dump($e->getMessage());
+    var_dump($e->getMessage());
 }
 
 // $test = new QueryBuilder;

@@ -24,15 +24,23 @@ class DBlite
 		
 		$config = array_change_key_case($config,CASE_LOWER);
 		// 判断是否为多维数组
-		if ( count($config) == count($config,1) ) 
-		{
-			self::$config = self::basicConfig( $config );
-		}else{
-			self::$config = self::separationConfig( $config );
-		}
+		self::$config = self::parseConfig($cconfig);
 		// 添加默认内容
 		self::$config['dbtype'] = isset($config['dbtype']) ? strtolower($config['dbtype']) : 'MYSQL';
-		self::createPdo(self::$config);
+		var_dump(self::$config);
+		// self::createPdo(self::$config);
+	}
+
+	protected static function parseConfig( $config )
+	{
+		$ret = [];
+		if(isset($config['read']) || isset($config['write']))
+		{
+			$ret = self::separationConfig($config);
+		}else{
+			$ret = self::basicConfig( $config );
+		}
+		return $ret;
 	}
 
 	protected static function basicConfig( $arr_config , $extendkey=null )
