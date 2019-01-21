@@ -24,7 +24,7 @@ class DBlite
 		
 		$config = array_change_key_case($config,CASE_LOWER);
 		// 判断是否为多维数组
-		self::$config = self::parseConfig($cconfig);
+		self::$config = self::parseConfig($config);
 		// 添加默认内容
 		self::$config['dbtype'] = isset($config['dbtype']) ? strtolower($config['dbtype']) : 'MYSQL';
 		var_dump(self::$config);
@@ -34,9 +34,9 @@ class DBlite
 	protected static function parseConfig( $config )
 	{
 		$ret = [];
-		if(isset($config['read']) || isset($config['write']))
+		if(isset($config['read']) || isset( $config['write']))
 		{
-			$ret = self::separationConfig($config);
+			$ret = self::separationConfig( $config);
 		}else{
 			$ret = self::basicConfig( $config );
 		}
@@ -77,11 +77,11 @@ class DBlite
 				$config[$key] = self::basicConfig($arr_config,$key);	
 			}
 		}
-		// 判断是否2个都有
-		if (count($config) < 2) 
-		{
-			$config = current($config);
-		}
+		// // 判断是否2个都有
+		// if (count($config) < 2) 
+		// {
+		// 	$config = current($config);
+		// }
 		return $config;
 	}
 
