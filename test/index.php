@@ -11,16 +11,14 @@ $config = [
     //     'host'   => '127.0.0.1',
     //     'port'   => 3306,
     //     'dbname' => 'databasesname',
-        
     // ],
-    'write' => [
+    // 'write' => [
         'host'   => '127.0.1.1',
         'port'   => 3301,
-        'dbname' => 'write',
-        'user'   => 'root', 
+        'dbname' => 'write_db',
+        'user'   => 'root',
         'pswd'   => 'root',
-        
-    ], 
+    // ],
     // 相同用户名和密码,其他配置相同也可以
     
     
