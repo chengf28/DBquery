@@ -18,9 +18,15 @@ class Connect
 
 	protected $useReadPdo = false;
 
+	protected $query;
+
+	const ALL = 1;
+
+	const ONE = 0;
+
     function __construct( PDO $pdo )
 	{
-		$this->pdo = $pdo;
+		$this->pdo   = $pdo;
 	}
 
 	public function setReadPdo( PDO $pdo )
@@ -51,8 +57,41 @@ class Connect
 		return $this;
 	}
 
-	public function statementExecute()
+	public function statementExecute($sql, $values)
 	{
-		
+
+		if ($this->useReadPdo) 
+		{
+			$pdostatement = $this->readPdo>prepare($sql);
+		}else{
+			$pdostatement = $this->pdo->prepare($sql);
+		}
+		$pdostatement->execute($values);
+		return $pdostatement;
 	}
+
+	// public function  __call($method , $args)
+	// {
+	// 	if (!empty($args)) 
+	// 	{
+	// 		$this->query->$method(...$args);
+	// 	}else{
+	// 		$this->query->$method();
+	// 	}
+	// 	return $this;
+	// }
+
+	public function fetch( \PDOStatement $sth,$type = self::ALL)
+	{
+		if ($type == self::ALL) 
+		{
+			return $sth->fetchAll(PDO::FETCH_OBJ);
+		}
+	}
+
+	// public function get()
+	// {
+		// $this->query->get( func_num_args() > 0 ? func_get_args() : '*' );
+		// return $this->fetch($this->statementExecute($this->query->toSql(),$this->query->getBind()));
+	// }
 }

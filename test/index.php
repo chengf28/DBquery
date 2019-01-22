@@ -10,22 +10,21 @@ $config = [
     // 'read' => [
     //     'host'   => '127.0.0.1',
     //     'port'   => 3306,
-    //     'dbname' => 'databasesname',
+    //     'dbname' => 'read_test',
     // ],
-    // 'write' => [
-        'host'   => '127.0.1.1',
-        'port'   => 3301,
-        'dbname' => 'write_db',
-        'user'   => 'root',
-        'pswd'   => 'root',
-    // ],
+    'write' => [
+        'host'   => '127.0.0.1',
+        'port'   => 3306,
+        'dbname' => 'write_test',
+    ],
+    'user'   => 'root',
+    'pswd'   => 'root',
     // 相同用户名和密码,其他配置相同也可以
-    
-    
 ];
 
 try{
-    $conec = DBlite::config($config);
+    DBlite::config($config);
+    $data = DBlite::table('tb_user')->where('id',2)->get();
 }catch(\Exception $e)
 {
     var_dump($e->getMessage());

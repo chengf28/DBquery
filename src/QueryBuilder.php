@@ -1,5 +1,6 @@
 <?php
 namespace DBlite;
+use DBlite\Connect;
 /*
 |---------------------------------------
 | @author Chenguifeng
@@ -42,10 +43,26 @@ class QueryBuilder
 	 */
 	public $wheres;
 
-	public function table( string $table)
+	/**
+	 * DBlite\Connect::class
+	 * @var Connect
+	 */
+	protected $connect; 
+
+	public function __construct( Connect $connect )
 	{
+		$this->connect = $connect;
+	}
+
+
+	public function table( $table )
+	{
+		if (is_array($table)) 
+		{
+			$table = implode(',',$table);
+		}
 		$this->table = $table;
-		return $this;	
+		return $this;
 	}
 	#-----------------------------
 	# select 类型
@@ -62,8 +79,7 @@ class QueryBuilder
 		{
 			$this->select($columns);
 		}
-		var_dump($this->toSql());
-		var_dump($this->getBind());
+		return $this->connect->fetch($this->connect->statementExecute($this->toSql(),$this->getBind()));
 	}
 
 	/**
@@ -102,8 +118,6 @@ class QueryBuilder
 		return $this;
 	}
 
-	
-
 	#-----------------------------
 	# tool 类型
 	#-----------------------------
@@ -121,7 +135,7 @@ class QueryBuilder
 		$this->query[$type][] = $value;
 	}
 
-	protected function toSql()
+	public function toSql()
 	{
 		$sql = [];
 		foreach ($this->query as $method => $value) 
@@ -152,7 +166,7 @@ class QueryBuilder
 
 	protected function completeWhere()
 	{
-		$sql = '';
+		$sql = 'where ';
 		if (!empty($this->wheres)) 
 		{
 			foreach ($this->wheres as $where)
@@ -160,7 +174,7 @@ class QueryBuilder
 				$sql .= $this->columnWarp($where['column']).' '.$where['operator'] .' ? '.$where['type'].' ';
 			}
 		}
-		return trim($sql,'and');
+		return trim($sql,'and ');
 	}
 
 	protected function completeGroup(){}
