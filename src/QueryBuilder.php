@@ -118,6 +118,25 @@ class QueryBuilder
 		return $this;
 	}
 
+	public function whereIn( $column , $values ){}
+
+	public function whereBetween( $column , $values ){}
+
+	public function whereNotIn(){}
+	
+	public function whereNotBetween(){}
+	
+	public function orWhere(){}
+
+	public function orWhereIn(){}
+
+	public function orWhereBetween( $column , $values ){}
+
+	public function orWhereNotIn(){}
+	
+	public function orWhereNotBetween(){}
+	
+
 	#-----------------------------
 	# tool 类型
 	#-----------------------------
