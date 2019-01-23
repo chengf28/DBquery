@@ -24,7 +24,8 @@ $config = [
 
 try{
     DBlite::config($config);
-    $data = DBlite::table('tb_user')->where('id',2)->get();
+    $data = DBlite::table('tb_user')->orWhereIn('id',[1])->where('token',2123)->toSql();
+    var_dump($data);
 }catch(\Exception $e)
 {
     var_dump($e->getMessage());

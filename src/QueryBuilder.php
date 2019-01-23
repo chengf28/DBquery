@@ -96,7 +96,7 @@ class QueryBuilder
 	#-----------------------------
 	# where 类型
 	#-----------------------------
-	public function where( $column , $operator = NULL, $value = NULL, $type = 'and')
+	public function where( $column , $operator = NULL, $value = NULL, $link = 'and')
 	{
 		if (is_array($column)) 
 		{
@@ -108,17 +108,32 @@ class QueryBuilder
 			return $this->anonymousWhere($column);
 		}
 
-		if ( func_num_args() == 2 && !$this->isOperator($operator) ) 
+		if ( is_null($value) && !$this->isOperator($operator) ) 
 		{
 			$value    = $operator;
 			$operator = '=';
 		}
-		$this->wheres[] = compact('column','operator','value','type');
+		$type = 'disposeWhereBasic';
+		$this->wheres[] = compact('type','column','operator','value','link');
 		$this->addbind($value,'where');
 		return $this;
 	}
 
-	public function whereIn( $column , $values ){}
+	public function whereIn( $column , $values ,$operator = 'IN',$link = "and" )
+	{
+		// 如果是匿名函数
+		if ( $values instanceof \Closure)
+		{
+			
+		}
+		$type = "disposeWhereIn";
+		$this->wheres[] = compact('type','values','column','operator','link');
+		foreach ( $values as $value ) 
+		{
+			$this->addbind($value,'where');
+		}
+		return $this;
+	}
 
 	public function whereBetween( $column , $values ){}
 
@@ -126,9 +141,15 @@ class QueryBuilder
 	
 	public function whereNotBetween(){}
 	
-	public function orWhere(){}
+	public function orWhere( $column , $value , $operator=NULL )
+	{
+		return $this->where($column,$value,$operator,"or");
+	}
 
-	public function orWhereIn(){}
+	public function orWhereIn($column , $values )
+	{
+		return $this->whereIn($column,$values,'IN','or');
+	}
 
 	public function orWhereBetween( $column , $values ){}
 
@@ -161,50 +182,23 @@ class QueryBuilder
 		{
 			$sql[$method] = trim($this->{'complete'.ucfirst($method)}());
 		}
+
 		return implode(' ',array_filter($sql,function($value)
 		{
 			return (string) $value !== '';
 		}));
+
 	}
 
 	protected function completeSelect()
 	{
 		if ( is_null($this->columns) )
 		{
-			$this->columns(['*']);
+			$this->select(['*']);
 		}
 		return "select ".$this->columnWarp($this->columns);
 	}
 
-	protected function completeFrom()
-	{
-		return "from {$this->table}";
-	}
-
-	protected function completeJoin(){}
-
-	protected function completeWhere()
-	{
-		$sql = 'where ';
-		if (!empty($this->wheres)) 
-		{
-			foreach ($this->wheres as $where)
-			{
-				$sql .= $this->columnWarp($where['column']).' '.$where['operator'] .' ? '.$where['type'].' ';
-			}
-		}
-		return trim($sql,'and ');
-	}
-
-	protected function completeGroup(){}
-
-	protected function completeOrder(){}
-
-
-	protected function isOperator( $operator )
-	{
-		return in_array($operator, $this->operator);
-	}
 
 	protected function columnWarp( $column )
 	{
@@ -228,6 +222,67 @@ class QueryBuilder
 		unset($value);
 		return join(',', $columns);
 	}
+
+	protected function completeFrom()
+	{
+		return "from {$this->table}";
+	}
+
+	protected function completeJoin(){}
+
+	/**
+	 * 处理wheres当中的数据
+	 * @author: chengf28
+	 * God Bless the Code
+	 * @return string 返回Sql;
+	 */
+	protected function completeWhere()
+	{
+		$sql = '';
+		if (!empty($this->wheres)) 
+		{
+			foreach ($this->wheres as $where)
+			{
+				$sql .= $this->{$where["type"]}($where);
+				// $sql .= $this->columnWarp($where['column']).' '.$where['operator'] .' ? '.$where['link'].' ';
+			}
+		}
+		return "where".trim(trim( $sql," and")," or");
+	}
+
+
+	private function disposeWhereBasic($where)
+	{
+		return " {$where['link']} {$this->columnWarp($where['column'])} {$where['operator']} ?";
+	}
+
+	private function disposeWhereIn($where)
+	{
+		return " {$where['link']} {$this->columnWarp($where['column'])} {$where['operator']} ( {$this->getCountOperator($where['values'])})";
+	}
+
+	private function disposeWhereBetween()
+	{
+
+	}
+
+	private function getCountOperator(array $arr)
+	{
+		$num = count($arr);
+		return trim(str_repeat("? ,",$num),',');
+	}
+
+	protected function completeGroup(){}
+
+	protected function completeOrder(){}
+
+
+	protected function isOperator( $operator )
+	{
+		return in_array($operator, $this->operator);
+	}
+
+	
 
 	protected function arrayWhereColumn( $columns )
 	{
