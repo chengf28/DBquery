@@ -57,7 +57,7 @@ class Connect
 		return $this;
 	}
 
-	public function statementExecute($sql, $values)
+	public function statementPrepare($sql)
 	{
 
 		if ($this->useReadPdo) 
@@ -66,8 +66,18 @@ class Connect
 		}else{
 			$pdostatement = $this->pdo->prepare($sql);
 		}
-		$pdostatement->execute($values);
 		return $pdostatement;
+	}
+
+	public function statementExecute(\PDOStatement $sth,array $values)
+	{
+		foreach ( $values as $key => $value ) 
+		{
+			$sth->bindValue($key+1,$value,is_numeric($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+		}
+		$sth->execute();
+		// $sth->debugDumpParams();
+		return $sth;
 	}
 
 	// public function  __call($method , $args)
