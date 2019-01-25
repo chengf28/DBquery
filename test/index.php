@@ -12,20 +12,28 @@ $config = [
     //     'port'   => 3306,
     //     'dbname' => 'read_test',
     // ],
-    'write' => [
+    // 'write' => [
         'host'   => '127.0.0.1',
         'port'   => 3306,
         'dbname' => 'write_test',
-    ],
+    // ],
     'user'   => 'root',
     'pswd'   => 'root',
     // 相同用户名和密码,其他配置相同也可以
 ];
 
 try{
+
     DBlite::config($config);
-    $data = DBlite::table('tb_user')->orWhereIn('id',[1])->where('token',2123)->toSql();
-    var_dump($data);
+    $db = DBlite::table('tb_user')->insert(function(){
+        return [10];
+    });
+    // $db = DBlite::table('tb_user')->limit(0,1)->where('id',2);
+    var_dump($db->toSql());
+
+    // var_dump($db->get());
+    // var_dump($db->getBind());
+
 }catch(\Exception $e)
 {
     var_dump($e->getMessage());

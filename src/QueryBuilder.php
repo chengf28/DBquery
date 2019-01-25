@@ -13,6 +13,7 @@ class QueryBuilder
 {
 	protected $query = 
 	[
+		'insert',
 		'select',
 		'from',
 		'join',
@@ -293,6 +294,36 @@ class QueryBuilder
 	}
 
 	#-----------------------------
+	# 插入部分
+	#-----------------------------
+
+	public function insert( $insert )
+	{
+		if ( is_object($insert) )
+		{
+			if ( $insert instanceof \Closure ) 
+			{
+				var_dump($this->anonymousInsert( $insert ));
+			}
+			if ( $insert instanceof \stdClass) 
+			{
+				$insert = (array)$insert;
+			}
+		}
+		return $this;
+	}
+
+	protected function arrayInsertColumn()
+	{
+
+	}
+
+	protected function anonymousInsert( \Closure $insert )
+	{
+		return (array)call_user_func($insert,$this);
+	}
+
+	#-----------------------------
 	# tool 类型
 	#-----------------------------
 	/**
@@ -316,8 +347,6 @@ class QueryBuilder
 		$this->bind[] = $value;
 	}
 
-
-	
 	/**
 	 * 生成Sql语句
 	 * @return string
@@ -336,17 +365,19 @@ class QueryBuilder
 		}));
 	}
 
+	protected function completeInsert(){}
+
 	/**
 	 * 完成 select 字段内容
 	 * @return void
 	 */
 	protected function completeSelect()
 	{
-		if ( is_null($this->columns) )
+		if ( !is_null($this->columns) )
 		{
-			$this->select(['*']);
+			return "select ".$this->columnWarp($this->columns);
 		}
-		return "select ".$this->columnWarp($this->columns);
+		return '';
 	}
 
 	/**
@@ -379,7 +410,7 @@ class QueryBuilder
 			$value = $this->columnWarp($value);
 		}
 		unset($value);
-		return join(',', $columns);
+		return implode(',', $columns);
 	}
 
 	/**
@@ -453,6 +484,4 @@ class QueryBuilder
 		throw new \Exception($message, 1);
 		return;
 	}
-
-	
 }
