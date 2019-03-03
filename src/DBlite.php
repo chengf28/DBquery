@@ -151,8 +151,15 @@ class DBlite
 		}
 	}
 
-	public static function table( $table )
+	/**
+	 * 调用其他类
+	 *
+	 * @param string $method
+	 * @param mixin $args
+	 * @return QueryBuilder::class
+	 */
+	public static function __callStatic( $method , $args )
 	{
-		return (new Query(self::$pdo))->table($table);
+		return (new Query(self::$pdo))->$method(...$args);
 	}
 }

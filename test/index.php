@@ -15,7 +15,7 @@ $config = [
     // 'write' => [
         'host'   => '127.0.0.1',
         'port'   => 3306,
-        'dbname' => 'write_test',
+        'dbname' => 'test',
     // ],
     'user'   => 'root',
     'pswd'   => 'root',
@@ -23,7 +23,6 @@ $config = [
 ];
 
 try{
-
     DBlite::config($config);
     $db = DBlite::table('tb_user')->insert(function(){
         return [10];
