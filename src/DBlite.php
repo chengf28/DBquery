@@ -3,10 +3,10 @@ namespace DBlite;
 use DBlite\Connect;
 use DBlite\QueryBuilder as Query;
 use \PDO;
-
 class DBlite
 {
-	const needKeys           = [
+	const needKeys = 
+	[
 		'host'   => '127.0.0.1',
 		'port'   => '3306',
 		'dbname' => 'user',
@@ -15,6 +15,8 @@ class DBlite
 	];
 	
 	protected static $pdo;
+
+	protected static $query;
 
 	/**
 	 * 载入配置数组
@@ -26,13 +28,19 @@ class DBlite
 	public static function config( array $input_config )
 	{
 		// 将数组键值转换成小写
-		$input_config  = self::changeKeyCase($input_config);
-		$output_config = self::disposeConfig($input_config);
+		$input_config  = self::changeKeyCase( $input_config );
+		$output_config = self::disposeConfig( $input_config );
 		// 添加默认内容
-		$output_config['dbtype'] = isset($input_config['dbtype']) ? strtolower($input_config['dbtype']) : 'MYpdo';
+		$output_config['dbtype'] = isset($input_config['dbtype']) ? strtolower($input_config['dbtype']) : 'Mysql';
 		self::$pdo = self::createPdo( $output_config );
 	}
 
+	/**
+	 * 处理配置文件
+	 * @param array $config
+	 * @return void
+	 * God Bless the Code
+	 */
 	protected static function disposeConfig( array $config )
 	{
 		$ret = [];
@@ -44,6 +52,13 @@ class DBlite
 		return $ret;
 	}
 
+	/**
+	 * 解析配置数组
+	 * @param array $input
+	 * @param string $extendKey
+	 * @return array
+	 * God Bless the Code
+	 */
 	protected static function parseConfig( array $input , $extendKey = null)
 	{
 		if ( !is_null($extendKey)  && isset( $input[$extendKey] ) )
@@ -109,7 +124,14 @@ class DBlite
 		return array_key_exists("write", $input);
 	}
 
-	public static function changeKeyCase(array $array, int $key = CASE_LOWER )
+	/**
+	 * 转换大小写
+	 * @param array $array
+	 * @param int $key
+	 * @return void
+	 * God Bless the Code
+	 */
+	public static function changeKeyCase( array $array, int $key = CASE_LOWER )
 	{
 		return array_change_key_case($array,$key);
 	}
@@ -118,6 +140,12 @@ class DBlite
 	# 公共
 	#-----------------------------
 
+	/**
+	 * 抛出异常
+	 * @param string $message
+	 * @return void
+	 * God Bless the Code
+	 */
 	public static function throwError( $message = '' )
 	{
 		throw new \Exception($message, 1);
@@ -160,6 +188,6 @@ class DBlite
 	 */
 	public static function __callStatic( $method , $args )
 	{
-		return (new Query(self::$pdo))->$method(...$args);
+		return (new Query)->$method(...$args);
 	}
 }

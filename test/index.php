@@ -24,24 +24,20 @@ $config = [
 
 try{
     DBlite::config($config);
-    $db = DBlite::table('tb_user')->insert(function(){
-        return [10];
-    });
-    // $db = DBlite::table('tb_user')->limit(0,1)->where('id',2);
-    var_dump($db->toSql());
-
-    // var_dump($db->get());
-    // var_dump($db->getBind());
+    $data = [[
+        'token' => '123',
+        'where' => '33333',
+        'test'  => '11111111111',
+    ],
+    [
+        'token' => '1234',
+        'where' => '333334',
+        'test'  => '111111111114',
+    ]];
+    
+    $db = DBlite::table('tb_user')->insert($data);
 
 }catch(\Exception $e)
 {
     var_dump($e->getMessage());
 }
-
-// $test = new QueryBuilder;
-// $test->table('test as tb1')->where([['key1','like','%www%']])->where('key2','>',2)->get();
-// 目标Sql 
-// select `key`, `key2` from test where `key1` like ? and `key2` > ?;
-
-// var_dump(strpos('as.dtest', '.',1) === false );
-// var_dump($test);

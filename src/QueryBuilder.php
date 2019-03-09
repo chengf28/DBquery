@@ -33,11 +33,6 @@ class QueryBuilder
 
     protected $wheres;
 
-    public function __construct( Connect $config )
-    {
-        $this->connect = $connect;
-    }
-
     public function table( string $table)
     {
         // 如果是数组类型的数据表
@@ -46,23 +41,27 @@ class QueryBuilder
             $table = implode( ',' , $table );
         }
         $this->table = $table;
+        return $this;
     }
 
-    public function insert( $data )
+    public function insert( array $insert )
     {
-        $insert = [];
-        if ( is_object($data) ) 
+        // 如果是空数组则直接返回true
+        if ( empty($insert) || empty(current($insert)) ) 
         {
-            if ( $data instanceof \Closure ) 
-            {
-                $insert = $this->anonymousReslove( $data );
-            }
+            return true;
         }
-        $std = $this->connect->statementPrepare($this->toSql());
-        $this->connect->statementExecute($std,$this->getBind());
-        return $this->connect->fetch($std);
-    }
 
+        /**
+         * 如果不是二维数组,则转换成为二维数组
+         */
+        if ( !is_array( current($insert) ) ) 
+        {
+            $insert = [$insert];
+        }
+        $sql = $this->completeInsert($insert);
+        \var_dump($sql);
+    }
 
     /**
      * 处理Clusore函数
@@ -73,6 +72,32 @@ class QueryBuilder
     protected function anonymousReslove( \Closure $data )
     {
         return call_user_func($data,$this);
+    }
+
+    #-----------------------------
+    # 插入处理
+    #-----------------------------
+
+    private function completeInsert( array $insert )
+    {
+        // 处理
+        $keys = implode(',',array_keys(current($insert)));
+        $values =implode(', ',array_map(function($val){
+            return '( '.implode(', ',$val).' )';
+        },$insert));
+        return "insert into {$this->table} ({$keys}) values {$values}";
+    }
+
+    #-----------------------------
+    # 共用部分
+    #-----------------------------
+
+    private function dispose( $value )
+    {
+        if (strpos($value,'as')) 
+        {
+            
+        }
     }
 
 
