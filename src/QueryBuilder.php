@@ -125,13 +125,16 @@ class QueryBuilder
     }
 
 
-    private function disposeAlias( String $string )
+    public function disposeAlias( String $string )
     {
-        
+        if (strpos($string , ' as ')) 
+        {
+            preg_filter();
+        }
     }
 
-    private function disposeCommon(  )
+    private function disposeCommon( String $string )
     {
-        
+        return "`$string`";
     }
 }
