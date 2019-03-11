@@ -34,8 +34,7 @@ try{
         'test'  => 'test2',
         'token' => 'token2',
     ]];
-    $db = DBlite::disposeAlias('tab as t1');
-
+    $db = DBlite::table('table')->insertGetId($data);
 }catch(\Exception $e)
 {
     var_dump($e->getMessage());

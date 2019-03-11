@@ -56,14 +56,49 @@ class QueryBuilder
         return $this;
     }
 
+    /**
+     * 插入数据,返回受影响行数
+     *
+     * @param array $insert
+     * @return integer
+     */
     public function insert( array $insert )
+    {
+        $sth = $this->insertCommon($insert);
+        // 返回受影响的行数
+        return $sth->rowCount();
+    }
+
+    /**
+     * 插入数据,获取最后的ID
+     *
+     * @param array $insert
+     * @return integer
+     */
+    public function insertGetId( array $insert )
+    {
+        $this->insertCommon($insert);
+        $id = $this->connect->getLastId();
+        if ($count = count($insert) > 1) 
+        {
+            $id += $count;
+        }
+        return $id;
+    }
+
+    /**
+     * insert公共功能
+     *
+     * @param array $insert
+     * @return \PDOStatement $sth;
+     */
+    protected function insertCommon( array $insert )
     {
         // 如果是空数组则直接返回true
         if ( empty($insert) || empty(current($insert)) ) 
         {
             return true;
         }
-
         /**
          * 如果不是二维数组,则转换成为二维数组
          */
@@ -71,13 +106,11 @@ class QueryBuilder
         {
             $insert = [$insert];
         }
-        
-        // 生成sql
         $sth = $this->connect->statementExecute(
             $this->connect->statementPrepare($this->completeInsert($insert)),
             $this->disposeValue($insert)
         );
-        return $this->connect->fetch($sth);
+        return $sth;
     }
 
     /**
@@ -94,19 +127,24 @@ class QueryBuilder
     #-----------------------------
     # 插入处理
     #-----------------------------
-
     private function completeInsert( array $insert )
     {
         // 处理字段排序
         $keys = current($insert);
         ksort($keys);
-        $keys = implode(', ',array_keys( $keys ));
+        $keys = implode(', ',array_map(
+            function($val)
+            {
+                return $this->disposeCommon($val);
+            },array_keys( $keys )));
         // 处理字段对应的值,并且转成占位符
-        $values = implode(', ',array_map(function($value){
-            return '('.implode(', ',array_fill(0,count($value),'?')).')';
-        },$insert));
+        $values = implode(', ',array_map(
+            function($value)
+            {
+                return '('.implode(', ',array_fill(0,count($value),'?')).')';
+            },$insert));
 
-        return "insert into {$this->table} ({$keys}) values {$values}";
+        return "insert into {$this->disposeAlias($this->table)} ({$keys}) values {$values}";
     }
 
     #-----------------------------
@@ -125,12 +163,14 @@ class QueryBuilder
     }
 
 
-    public function disposeAlias( String $string )
+    private function disposeAlias( String $string )
     {
         if (strpos($string , ' as ')) 
         {
-            preg_filter();
+            $alias = explode(' as ',$string);
+            return $this->disposeCommon($alias[0])." as ".$this->disposeCommon($alias[1]);
         }
+        return $this->disposeCommon($string);
     }
 
     private function disposeCommon( String $string )

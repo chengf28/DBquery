@@ -57,6 +57,22 @@ class Connect
 		return $this;
 	}
 
+	/**
+	 * 获取到上一条语句最后获取的id;
+	 *
+	 * @return integer
+	 */
+	public function getLastId()
+	{
+		return $this->pdo->lastInsertId();
+	}
+
+	/**
+	 * 预处理一条sql语句
+	 *
+	 * @param string $sql
+	 * @return \PdoStatement $sth;
+	 */
 	public function statementPrepare($sql)
 	{
 
@@ -68,7 +84,13 @@ class Connect
 		}
 		return $pdostatement;
 	}
-
+	/**
+	 * 执行prepare返回的PDOStatement返回的语句
+	 *
+	 * @param \PDOStatement $sth
+	 * @param array $values
+	 * @return PDOStatement $sth
+	 */
 	public function statementExecute(\PDOStatement $sth,array $values)
 	{
 		foreach ( $values as $key => $value ) 
@@ -76,14 +98,20 @@ class Connect
 			$sth->bindValue($key+1,$value,is_numeric($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
 		}
 		$sth->execute();
-		
+		// 判断是否存在语法错误
 		if($sth->errorCode() !== '00000')
 		{
 			throw new \Exception($sth->errorInfo()[2], 1);
 		}
 		return $sth;
 	}
-
+	/**
+	 * 获取结果
+	 *
+	 * @param \PDOStatement $sth
+	 * @param int $type
+	 * @return mixin
+	 */
 	public function fetch( \PDOStatement $sth,$type = self::ALL)
 	{
 		if ($type == self::ALL) 
@@ -91,7 +119,4 @@ class Connect
 			return $sth->fetchAll(PDO::FETCH_OBJ);
 		}
 	}
-
-	
-
 }
