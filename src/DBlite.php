@@ -188,6 +188,7 @@ class DBlite
 	 */
 	public static function __callStatic( $method , $args )
 	{
-		return (new Query)->$method(...$args);
+		// 框架化,可在此处使用容器注入依赖,插件使用,固定写死底层;
+		return (new Query(self::$pdo))->$method(...$args);
 	}
 }

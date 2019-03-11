@@ -33,6 +33,18 @@ class QueryBuilder
 
     protected $wheres;
 
+    protected $connect;
+
+    /**
+     * 构造函数,依赖注入PDO底层
+     * @param \DBlite\Connect $connect
+     * God Bless the Code
+     */
+    public function __construct( Connect $connect )
+    {
+        $this->connect = $connect;
+    }
+
     public function table( string $table)
     {
         // 如果是数组类型的数据表
@@ -59,8 +71,13 @@ class QueryBuilder
         {
             $insert = [$insert];
         }
-        $sql = $this->completeInsert($insert);
-        \var_dump($sql);
+        
+        // 生成sql
+        $sth = $this->connect->statementExecute(
+            $this->connect->statementPrepare($this->completeInsert($insert)),
+            $this->disposeValue($insert)
+        );
+        return $this->connect->fetch($sth);
     }
 
     /**
@@ -80,11 +97,15 @@ class QueryBuilder
 
     private function completeInsert( array $insert )
     {
-        // 处理
-        $keys = implode(',',array_keys(current($insert)));
-        $values =implode(', ',array_map(function($val){
-            return '( '.implode(', ',$val).' )';
+        // 处理字段排序
+        $keys = current($insert);
+        ksort($keys);
+        $keys = implode(', ',array_keys( $keys ));
+        // 处理字段对应的值,并且转成占位符
+        $values = implode(', ',array_map(function($value){
+            return '('.implode(', ',array_fill(0,count($value),'?')).')';
         },$insert));
+
         return "insert into {$this->table} ({$keys}) values {$values}";
     }
 
@@ -92,14 +113,25 @@ class QueryBuilder
     # 共用部分
     #-----------------------------
 
-    private function dispose( $value )
+    private function disposeValue( array $input )
     {
-        if (strpos($value,'as')) 
+        $output = [];
+        foreach ($input as $value) 
         {
-            
+            ksort($value);
+            $output = array_merge($output ,array_values($value) );
         }
+        return $output;
     }
 
 
+    private function disposeAlias( String $string )
+    {
+        
+    }
 
+    private function disposeCommon(  )
+    {
+        
+    }
 }

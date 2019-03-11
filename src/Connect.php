@@ -76,20 +76,13 @@ class Connect
 			$sth->bindValue($key+1,$value,is_numeric($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
 		}
 		$sth->execute();
-		// $sth->debugDumpParams();
+		
+		if($sth->errorCode() !== '00000')
+		{
+			throw new \Exception($sth->errorInfo()[2], 1);
+		}
 		return $sth;
 	}
-
-	// public function  __call($method , $args)
-	// {
-	// 	if (!empty($args)) 
-	// 	{
-	// 		$this->query->$method(...$args);
-	// 	}else{
-	// 		$this->query->$method();
-	// 	}
-	// 	return $this;
-	// }
 
 	public function fetch( \PDOStatement $sth,$type = self::ALL)
 	{
@@ -99,9 +92,6 @@ class Connect
 		}
 	}
 
-	// public function get()
-	// {
-		// $this->query->get( func_num_args() > 0 ? func_get_args() : '*' );
-		// return $this->fetch($this->statementExecute($this->query->toSql(),$this->query->getBind()));
-	// }
+	
+
 }

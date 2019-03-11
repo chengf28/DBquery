@@ -25,18 +25,18 @@ $config = [
 try{
     DBlite::config($config);
     $data = [[
-        'token' => '123',
-        'where' => '33333',
-        'test'  => '11111111111',
+        'token' => 'token1',
+        'where' => 'where1',
+        'test'  => 'test1',
     ],
     [
-        'token' => '1234',
-        'where' => '333334',
-        'test'  => '111111111114',
+        'where' => 'where2',
+        'test'  => 'test2',
+        'token' => 'token2',
     ]];
+    $db = DBlite::table('table1')->insert($data);
+    var_dump($db);
     
-    $db = DBlite::table('tb_user')->insert($data);
-
 }catch(\Exception $e)
 {
     var_dump($e->getMessage());
