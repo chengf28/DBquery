@@ -32,11 +32,21 @@ try{
             'where' => 'where2',
             'test'  => 'test2',
             'token' => 'token2',
+        ],[
+            'token' => 'token1',
+            'where' => 'where1',
+            'test'  => 'test1',
+        ],
+        [
+            'where' => 'where2',
+            'test'  => 'test2',
+            'token' => 'token2',
         ]
     ];
     
-    //
-    $db = DBlite::where('id',2);
+    // $db = DBlite::table('tb_user')->insert($data);
+
+    $db = DBlite::where('where',2);
 }catch(\Exception $e)
 {
     var_dump( $e->getMessage() );

@@ -91,9 +91,9 @@ class QueryBuilder
     {
         $this->insertCommon($insert,true);
         $id = $this->connect->getLastId(true);
-        if ( $count = count($insert) > 1 )
+        if ( ($count = count($insert)) > 1 )
         {
-            $id += $count;
+            $id += $count-1;
         }
         return $id;
     }
@@ -139,24 +139,27 @@ class QueryBuilder
     # where条件
     #-----------------------------
 
-    public function where($columns,$operator,$values=null)
+    public function where( $columns , $operator = null , $values = null )
     {
         
         if ( is_array( $columns ) )
         {
-            
+            return $this->arrayColumn();
         }
 
         if ( $columns instanceof \Closure ) 
         {
             
         }
-            
-        if ( !in_array(strtoupper($operator),$this->operator) ) 
+        // 只有2个参数
+        if ( is_null($values) && !$this->isOperator($operator)  ) 
         {
-            throw new \Exception(__CLASS__.":符号错误", 1);
+            $values   = $operator;
+            // 默认操作符为 = 号
+            $operator = '=';
         }
 
+        $this->wheres[] = compact('columns','operator','values','type');
     }
 
 
@@ -193,10 +196,10 @@ class QueryBuilder
         $values = implode(', ',array_map(
             function($value)
             {
-                return '('.implode(', ',array_fill(0,count($value),'?')).')';
+                return '('.$this->disposePlaceholder($value).')';
             },$insert));
 
-        return "insert into {$this->disposeAlias($this->table)} ({$keys}) values {$values}";
+        return "insert into {$this->disposeAlias($this->table)} ($keys) values $values";
     }
 
     private function completeDelect()
@@ -211,6 +214,18 @@ class QueryBuilder
     #-----------------------------
     # 共用部分
     #-----------------------------
+    
+    /**
+     * 判断是否正常的操作
+     * @param string $operator
+     * @return boolean
+     * God Bless the Code
+     */
+    protected function isOperator( string $operator) : bool
+    {
+        return in_array(strtoupper($operator),$this->operator);
+    }
+
 
     private function disposeValue( array $input )
     {
@@ -237,5 +252,17 @@ class QueryBuilder
     private function disposeCommon( String $string )
     {
         return "`$string`";
+    }
+    
+    /**
+     * 将值转换成占位符
+     * @param array $replace
+     * @param string $operator
+     * @return string
+     * God Bless the Code
+     */
+    private function disposePlaceholder( array $replace , string $operator = "?"):string
+    {
+        return implode(', ',array_fill(0,count($replace),$operator));
     }
 }
