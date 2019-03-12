@@ -12,11 +12,9 @@ use \PDO;
 class Connect
 {
 
-	protected $readPdo;
+	protected $writePdo;
 
 	protected $pdo;
-
-	protected $useReadPdo = false;
 
 	protected $query;
 
@@ -29,14 +27,14 @@ class Connect
 		$this->pdo   = $pdo;
 	}
 
-	public function setReadPdo( PDO $pdo )
+	public function setWritePdo( PDO $pdo )
 	{
-		$this->readPdo = $pdo;
+		$this->writePdo = $pdo;
 	}
 
-	public function unsetReadPdo()
+	public function unsetWritePdo()
 	{
-		$this->readPdo = NULL;
+		$this->writePdo = NULL;
 	}
 
 	public function transaction()
@@ -58,27 +56,32 @@ class Connect
 	}
 
 	/**
-	 * 获取到上一条语句最后获取的id;
-	 *
+	 * 获取到最后的主键ID
+	 * @param bool $writePdo
 	 * @return integer
+	 * God Bless the Code
 	 */
-	public function getLastId()
+	public function getLastId( bool $writePdo = false )
 	{
+		if ( $writePdo ) 
+		{
+			return $this->writePdo->lastInsertId();	
+		}
 		return $this->pdo->lastInsertId();
 	}
 
 	/**
-	 * 预处理一条sql语句
-	 *
+	 * 预处理一条sql
 	 * @param string $sql
-	 * @return \PdoStatement $sth;
+	 * @param bool $writePdo
+	 * @return \PDOstatement
+	 * God Bless the Code
 	 */
-	public function statementPrepare($sql)
+	public function statementPrepare( string $sql , bool $writePdo = false)
 	{
-
-		if ($this->useReadPdo) 
+		if ( $writePdo )
 		{
-			$pdostatement = $this->readPdo>prepare($sql);
+			$pdostatement = $this->writePdo->prepare($sql);
 		}else{
 			$pdostatement = $this->pdo->prepare($sql);
 		}

@@ -162,15 +162,16 @@ class DBlite
 	 */
 	public static function createPdo( array $config )
 	{
-
 		try
 		{
-			$pdo = new Connect(new PDO($config['dbtype'].":".$config['write']['string'],$config['write']['user'],$config['write']['pswd']));
+			$pdo = new Connect(new PDO( $readPdo = $config['dbtype'].":".$config['read']['string'],$config['read']['user'],$config['read']['pswd']));
 			
 			// 如果读写分离,创造写库
-			if ( self::hasRead($config) ) 
+			if ( self::hasWrite($config) ) 
 			{
-				$pdo->setReadPdo(new PDO($config['dbtype'].":".$config['read']['string'],$config['read']['user'],$config['read']['pswd']));
+				$pdo->setWritePdo(new PDO($config['dbtype'].":".$config['write']['string'],$config['write']['user'],$config['write']['pswd']));
+			}else{
+				$pdo->setWritePdo($readPdo);
 			}
 			return $pdo;
 		}catch(\PDOException $e)

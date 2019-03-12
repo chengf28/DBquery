@@ -35,8 +35,11 @@ class QueryBuilder
 
     protected $connect;
 
+    protected $useWrite;
+
     /**
      * 构造函数,依赖注入PDO底层
+     * @author chengf28 <chengf_28@163.com>
      * @param \DBlite\Connect $connect
      * God Bless the Code
      */
@@ -56,30 +59,39 @@ class QueryBuilder
         return $this;
     }
 
+    public function useWrite()
+    {
+        $this->useWrite = true;
+    }
+    
+    #-----------------------------
+    # 插入
+    #-----------------------------
+
     /**
      * 插入数据,返回受影响行数
-     *
+     * @author chengf28 <chengf_28@163.com>
      * @param array $insert
      * @return integer
      */
     public function insert( array $insert )
     {
-        $sth = $this->insertCommon($insert);
+        $sth = $this->insertCommon($insert,true);
         // 返回受影响的行数
         return $sth->rowCount();
     }
 
     /**
      * 插入数据,获取最后的ID
-     *
+     * @author chengf28 <chengf_28@163.com>
      * @param array $insert
      * @return integer
      */
     public function insertGetId( array $insert )
     {
-        $this->insertCommon($insert);
-        $id = $this->connect->getLastId();
-        if ($count = count($insert) > 1) 
+        $this->insertCommon($insert,true);
+        $id = $this->connect->getLastId(true);
+        if ( $count = count($insert) > 1 )
         {
             $id += $count;
         }
@@ -88,11 +100,11 @@ class QueryBuilder
 
     /**
      * insert公共功能
-     *
+     * @author chengf28 <chengf_28@163.com>
      * @param array $insert
      * @return \PDOStatement $sth;
      */
-    protected function insertCommon( array $insert )
+    protected function insertCommon( array $insert , $write = true )
     {
         // 如果是空数组则直接返回true
         if ( empty($insert) || empty(current($insert)) ) 
@@ -107,15 +119,55 @@ class QueryBuilder
             $insert = [$insert];
         }
         $sth = $this->connect->statementExecute(
-            $this->connect->statementPrepare($this->completeInsert($insert)),
+            $this->connect->statementPrepare($this->completeInsert($insert),$write),
             $this->disposeValue($insert)
         );
         return $sth;
     }
 
+    #-----------------------------
+    # 删除
+    #-----------------------------
+    
+    public function delete()
+    {
+        
+    }
+
+
+    #-----------------------------
+    # where条件
+    #-----------------------------
+
+    public function where($columns,$operator,$values=null)
+    {
+        
+        if ( is_array( $columns ) )
+        {
+            
+        }
+
+        if ( $columns instanceof \Closure ) 
+        {
+            
+        }
+            
+        if ( !in_array(strtoupper($operator),$this->operator) ) 
+        {
+            throw new \Exception(__CLASS__.":符号错误", 1);
+        }
+
+    }
+
+
+    public function whereCommon()
+    {
+
+    }
+
     /**
      * 处理Clusore函数
-     *
+     * @author chengf28 <chengf_28@163.com>
      * @param \Closure $data
      * @return void
      */
@@ -147,6 +199,15 @@ class QueryBuilder
         return "insert into {$this->disposeAlias($this->table)} ({$keys}) values {$values}";
     }
 
+    private function completeDelect()
+    {
+
+    }
+
+    private function completeWhere()
+    {
+        
+    }
     #-----------------------------
     # 共用部分
     #-----------------------------
