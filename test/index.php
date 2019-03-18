@@ -22,31 +22,35 @@ $config = [
 
 try{
     DBlite::config($config);
+    // $data = [
+    //     [
+    //         'token' => 'token1',
+    //         'where' => 'where1',
+    //         'test'  => 'test1',
+    //     ],
+    //     [
+    //         'where' => 'where2',
+    //         'test'  => 'test2',
+    //         'token' => 'token2',
+    //     ],[
+    //         'token' => 'token1',
+    //         'where' => 'where1',
+    //         'test'  => 'test1',
+    //     ],
+    //     [
+    //         'where' => 'where2',
+    //         'test'  => 'test2',
+    //         'token' => 'token2',
+    //     ]
+    // ];
     $data = [
-        [
-            'token' => 'token1',
-            'where' => 'where1',
-            'test'  => 'test1',
-        ],
-        [
-            'where' => 'where2',
-            'test'  => 'test2',
-            'token' => 'token2',
-        ],[
-            'token' => 'token1',
-            'where' => 'where1',
-            'test'  => 'test1',
-        ],
-        [
-            'where' => 'where2',
-            'test'  => 'test2',
-            'token' => 'token2',
-        ]
+        'test','like',2,
     ];
-    
     // $db = DBlite::table('tb_user')->insert($data);
-    $db = DBlite::where('where',2);
-    
+
+    // $db = DBlite::where(['test',2]);
+    $db = DBlite::where($data)->delect();
+    var_dump($db->wheres);
 }catch(\Exception $e)
 {
     var_dump( $e->getMessage() );

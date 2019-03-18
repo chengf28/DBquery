@@ -31,7 +31,7 @@ class QueryBuilder
 
     protected $columns;
 
-    protected $wheres;
+    public $wheres;
 
     protected $connect;
 
@@ -120,7 +120,7 @@ class QueryBuilder
         }
         $sth = $this->connect->statementExecute(
             $this->connect->statementPrepare($this->completeInsert($insert),$write),
-            $this->disposeValue($insert)
+            $this->disposeValueArrayDimension($insert)
         );
         return $sth;
     }
@@ -129,9 +129,13 @@ class QueryBuilder
     # 删除
     #-----------------------------
     
-    public function delete()
+    public function delete( $id = null )
     {
-        
+        if ( !is_null($id) )
+        {
+            // TODO
+        }
+        $this->completeDelect();
     }
 
 
@@ -139,12 +143,12 @@ class QueryBuilder
     # where条件
     #-----------------------------
 
-    public function where( $columns , $operator = null , $values = null )
+    public function where( $columns , $operator = null , $values = null , $type = 'and')
     {
         
         if ( is_array( $columns ) )
         {
-            return $this->arrayColumn();
+            return $this->arrayColumn( $columns );
         }
 
         if ( $columns instanceof \Closure ) 
@@ -160,8 +164,24 @@ class QueryBuilder
         }
 
         $this->wheres[] = compact('columns','operator','values','type');
+        return $this;
     }
 
+    public function arrayColumn( array $columns )
+    {
+        // 二维数组处理
+        if( is_array(current($columns)) )
+        {
+            array_walk($columns,function($column)
+            {
+                $this->where( ...$column );
+            });
+        }else{
+            $this->where( ...$columns );
+        }
+
+        return $this;
+    }
 
     public function whereCommon()
     {
@@ -213,19 +233,30 @@ class QueryBuilder
     # 共用部分
     #-----------------------------
     
+    public function disposeColumns( $columns )
+    {
+        
+    }
+
+
     /**
      * 判断是否正常的操作
      * @param string $operator
      * @return boolean
      * God Bless the Code
      */
-    protected function isOperator( string $operator) : bool
+    protected function isOperator( string $operator)
     {
         return in_array(strtoupper($operator),$this->operator);
     }
 
-
-    private function disposeValue( array $input )
+    /**
+     * 降维数组
+     * @param array $input
+     * @return array
+     * God Bless the Code
+     */
+    private function disposeValueArrayDimension( array $input )
     {
         $output = [];
         foreach ($input as $value) 
@@ -236,7 +267,12 @@ class QueryBuilder
         return $output;
     }
 
-
+    /**
+     * 处理别名
+     * @param String $string
+     * @return string
+     * God Bless the Code
+     */
     private function disposeAlias( String $string )
     {
         if (strpos($string , ' as ')) 
@@ -247,6 +283,12 @@ class QueryBuilder
         return $this->disposeCommon($string);
     }
 
+    /**
+     * 处理key字段,加上`符号
+     * @param String $string
+     * @return string
+     * God Bless the Code
+     */
     private function disposeCommon( String $string )
     {
         return "`$string`";
@@ -259,7 +301,7 @@ class QueryBuilder
      * @return string
      * God Bless the Code
      */
-    private function disposePlaceholder( array $replace , string $operator = "?"):string
+    private function disposePlaceholder( array $replace , string $operator = "?")
     {
         return implode(', ',array_fill(0,count($replace),$operator));
     }
