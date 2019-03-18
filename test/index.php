@@ -45,8 +45,8 @@ try{
     ];
     
     // $db = DBlite::table('tb_user')->insert($data);
-
     $db = DBlite::where('where',2);
+    
 }catch(\Exception $e)
 {
     var_dump( $e->getMessage() );

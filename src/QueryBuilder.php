@@ -48,7 +48,7 @@ class QueryBuilder
         $this->connect = $connect;
     }
 
-    public function table( string $table)
+    public function table( string $table )
     {
         // 如果是数组类型的数据表
         if ( is_array($table) ) 
@@ -198,13 +198,11 @@ class QueryBuilder
             {
                 return '('.$this->disposePlaceholder($value).')';
             },$insert));
-
         return "insert into {$this->disposeAlias($this->table)} ($keys) values $values";
     }
 
     private function completeDelect()
     {
-
     }
 
     private function completeWhere()
