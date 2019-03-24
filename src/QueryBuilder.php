@@ -48,7 +48,7 @@ class QueryBuilder
         $this->connect = $connect;
     }
 
-    public function table( string $table )
+    public function table( string $table)
     {
         // 如果是数组类型的数据表
         if ( is_array($table) ) 
@@ -129,13 +129,23 @@ class QueryBuilder
     # 删除
     #-----------------------------
     
+    /**
+     * 删除删除数据,返回受影响行数
+     * @param int $id
+     * @return void
+     * God Bless the Code
+     */
     public function delete( $id = null )
     {
         if ( !is_null($id) )
         {
-            // TODO
+            $this->where('id',$id);
         }
-        $this->completeDelect();
+        $sth = $this->connect->statementExecute(
+            $this->connect->statementPrepare($this->completeDelect(),true),
+            $this->columns
+        );
+        return $sth->rowCount();
     }
 
 
@@ -143,12 +153,11 @@ class QueryBuilder
     # where条件
     #-----------------------------
 
-    public function where( $columns , $operator = null , $values = null , $type = 'and')
+    public function where( $columns , $operator = null , $values = null ,  string $link = 'and' )
     {
-        
         if ( is_array( $columns ) )
         {
-            return $this->arrayColumn( $columns );
+            return $this->arrayColumn( $columns , $link );
         }
 
         if ( $columns instanceof \Closure ) 
@@ -162,17 +171,55 @@ class QueryBuilder
             // 默认操作符为 = 号
             $operator = '=';
         }
+        $type = 'basic';
+        return $this->whereCommon( $type , $columns , $operator , $values , $link );
+    }
 
-        $this->wheres[] = compact('columns','operator','values','type');
+    public function orWhere( $columns , $operator = null, $values = null )
+    {
+        return $this->where($columns,$operator,$values,'or');
+    }
+
+    public function whereBetween( $columns , array $values , string $link = 'and' , bool $boolean = true )
+    {
+        $operator = $boolean ? 'between' : 'not between';
+        $type     = 'between';
+        return $this->whereCommon( $type , $columns , $operator , $values , $link );
+    }
+
+    public function whereIn( $columns , array $values , string $link = 'and' , bool $boolean = true )
+    {
+        $operator = $boolean ? 'in' : 'not in';
+        $type = 'in';
+        return $this->whereCommon( $type , $columns , $operator , $values , $link );
+    }
+
+    protected function whereCommon( string $type , $columns , $operator = null , $values = null , string $link = 'and' )
+    {
+        $this->wheres[] = compact('type','columns','operator','values','link');
+        $this->bindValues($values);
         return $this;
     }
 
-    public function arrayColumn( array $columns )
+    protected function bindValues( $values )
+    {
+        if ( is_array($values) ) 
+        {
+            foreach ($values as $value) 
+            {
+                $this->columns[] = $value;
+            }
+        }else{
+            $this->columns[] = $values;
+        }
+    }
+    
+    protected function arrayColumn( array $columns , $link )
     {
         // 二维数组处理
         if( is_array(current($columns)) )
         {
-            array_walk($columns,function($column)
+            array_walk($columns,function($column) use ($link)
             {
                 $this->where( ...$column );
             });
@@ -181,11 +228,6 @@ class QueryBuilder
         }
 
         return $this;
-    }
-
-    public function whereCommon()
-    {
-
     }
 
     /**
@@ -208,10 +250,12 @@ class QueryBuilder
         $keys = current($insert);
         ksort($keys);
         $keys = implode(', ',array_map(
-            function($val)
-            {
-                return $this->disposeCommon($val);
-            },array_keys( $keys )));
+                function($val)
+                {
+                    return $this->disposeCommon($val);
+                },array_keys( $keys )
+            )
+        );
         // 处理字段对应的值,并且转成占位符
         $values = implode(', ',array_map(
             function($value)
@@ -223,11 +267,44 @@ class QueryBuilder
 
     private function completeDelect()
     {
+        var_dump("delete from {$this->disposeAlias($this->table)} {$this->completeWhere()}");
+        var_dump($this->columns);
+        die;
     }
-
+    #-----------------------------
+    # 处理where类
+    #-----------------------------
     private function completeWhere()
     {
-        
+        if ( empty($this->wheres) ) 
+        {
+            return '';
+        }
+        $str = array_reduce(array_map(function( $where )
+        {
+            // $this->columns[] = $where['values'];
+            return $where['link'].$this->{'completeWhere'.ucfirst($where['type'])}($where);
+        },$this->wheres),function($carry,$item)
+        {
+            return $carry .= $item;
+        });
+        return 'where'.preg_replace('/and|or/','',$str,1);
+    }
+
+
+    private function completeWhereBasic( array $where )
+    {
+        return " {$this->disposeCommon($where['columns'])} {$where['operator']} ? ";
+    }
+
+    private function completeWhereBetween( array $where )
+    {
+        return " {$this->disposeCommon($where['columns'])} {$where['operator']} ? and ? ";
+    }
+
+    private function completeWhereIn( array $where )
+    {
+        return " {$this->disposeCommon($where['columns'])} {$where['operator']} ({$this->disposePlaceholder($where['values'])})";
     }
     #-----------------------------
     # 共用部分

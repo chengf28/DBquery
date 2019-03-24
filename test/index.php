@@ -44,13 +44,15 @@ try{
     //     ]
     // ];
     $data = [
-        'test','like',2,
+        ['test',2],
+        ['wwww','>',10]
     ];
     // $db = DBlite::table('tb_user')->insert($data);
 
     // $db = DBlite::where(['test',2]);
-    $db = DBlite::where($data)->delect();
-    var_dump($db->wheres);
+    $db = DBlite::table('tb_user')->whereBetween('id',[1,2])->orWhere($data)->delete();
+    var_dump($db);
+
 }catch(\Exception $e)
 {
     var_dump( $e->getMessage() );
