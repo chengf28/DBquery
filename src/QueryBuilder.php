@@ -118,9 +118,10 @@ class QueryBuilder
         {
             $insert = [$insert];
         }
-        $sth = $this->connect->statementExecute(
-            $this->connect->statementPrepare($this->completeInsert($insert),$write),
-            $this->disposeValueArrayDimension($insert)
+        $sth = $this->run(
+            $this->completeInsert($insert),
+            $this->disposeValueArrayDimension($insert),
+            $write
         );
         return $sth;
     }
@@ -141,13 +142,52 @@ class QueryBuilder
         {
             $this->where('id',$id);
         }
-        $sth = $this->connect->statementExecute(
-            $this->connect->statementPrepare($this->completeDelect(),true),
-            $this->columns
+        $sth = $this->run(
+            $this->completeDelect($this->getWheres()),
+            $this->columns,
+            true
         );
         return $sth->rowCount();
     }
 
+
+    #-----------------------------
+    # 更新
+    #-----------------------------
+    
+    public function update( array $update )
+    {
+        if ( empty($update) || empty(current($update)) )
+        {
+            return 0;
+        }
+
+        if ( !is_array( current($update) ) ) 
+        {
+            $update = [$update];
+        }
+        $sth = $this->run(
+            $this->completeUpdate(),
+            $this->disposeValueArrayDimension(),
+            true
+        );
+    }
+
+    /**
+     * 执行sql  
+     * @param string $sql
+     * @param mixin $values
+     * @param bool $useWrite
+     * @return \PDOStatement::class
+     * God Bless the Code
+     */
+    private function run( string $sql , $values , $useWrite = true )
+    {
+        return $this->connect->statementExecute(
+            $this->connect->statementPrepare($sql,$useWrite),
+            $values            
+        );
+    }
 
     #-----------------------------
     # where条件
@@ -155,6 +195,10 @@ class QueryBuilder
 
     public function where( $columns , $operator = null , $values = null ,  string $link = 'and' )
     {
+
+        /**
+         * 如果传入的是一个数组,则交个数组处理函数处理
+         */
         if ( is_array( $columns ) )
         {
             return $this->arrayColumn( $columns , $link );
@@ -165,7 +209,7 @@ class QueryBuilder
             
         }
         // 只有2个参数
-        if ( is_null($values) && !$this->isOperator($operator)  ) 
+        if ( is_null($values) && !$this->isOperator($operator)  && func_num_args() ==2 ) 
         {
             $values   = $operator;
             // 默认操作符为 = 号
@@ -180,20 +224,120 @@ class QueryBuilder
         return $this->where($columns,$operator,$values,'or');
     }
 
-    public function whereBetween( $columns , array $values , string $link = 'and' , bool $boolean = true )
+    /**
+     * 处理` whee key between (?,?)`
+     * @param string $columns
+     * @param array $values
+     * @param string $link
+     * @param bool $boolean
+     * @return this
+     * God Bless the Code
+     */
+    public function whereBetween( string $columns , array $values , string $link = 'and' , bool $boolean = true )
     {
         $operator = $boolean ? 'between' : 'not between';
         $type     = 'between';
         return $this->whereCommon( $type , $columns , $operator , $values , $link );
     }
 
-    public function whereIn( $columns , array $values , string $link = 'and' , bool $boolean = true )
+    /**
+     * 处理 `where key not between (x,x)`
+     * @param string $columns
+     * @param array $values
+     * @return void
+     * God Bless the Code
+     */
+    public function whereNotBetwwen( string $columns , array $values )
+    {
+        return $this->whereBetween($columns , $values , 'and',false);
+    }
+
+    /**
+     * 处理 `where or between (x,x)`
+     * @param string $columns
+     * @param array $values
+     * @return this
+     * God Bless the Code
+     */
+    public function orWhereBetween( string $columns , array $values )
+    {
+        return $this->whereBetween( $columns,$values,'or', true);
+    }
+
+    /**
+     * 处理 ` where or key not between (x,x)`
+     * @param string $columns
+     * @param array $values
+     * @return this
+     * God Bless the Code
+     */
+    public function orWhereNotBetween( string $columns , array $values)
+    {
+        return $this->whereBetween( $columns , $values , 'or' , false );
+    }
+
+    /**
+     * 处理 ` where in ` 语句
+     * @param string $columns
+     * @param array $values
+     * @param string $link
+     * @param bool $boolean
+     * @return this
+     * God Bless the Code
+     */
+    public function whereIn( string $columns , array $values , string $link = 'and' , bool $boolean = true )
     {
         $operator = $boolean ? 'in' : 'not in';
         $type = 'in';
         return $this->whereCommon( $type , $columns , $operator , $values , $link );
     }
+    
+    /**
+     * 处理 ` where key not in (x,x)` 语句
+     * @param string $columns
+     * @param array $values
+     * @return this
+     * God Bless the Code
+     */
+    public function whereNotIn( string $columns , array $values )
+    {
+        return $this->whereIn( $columns , $values , 'and' , false );
+    }
 
+    /**
+     * 处理 ` where or in ` 语句
+     * @param string $columns
+     * @param array $values
+     * @return this
+     * God Bless the Code
+     */
+    public function orWhereIn( string $columns , array $values )
+    {
+        return $this->whereIn($columns , $values , 'or', true);
+    }
+
+    /**
+     * 处理 ` where or not in ` 语句
+     * @param string $columns
+     * @param array $values
+     * @return this
+     * God Bless the Code
+     */
+    public function orWhereNotIn( string $columns , array $values )
+    {
+        return $this->whereIn( $columns , $values , 'or' , false );
+    }
+
+    /**
+     * where 公告处理部分
+     * @param string $type
+     * @param mixin $columns
+     * @param string $operator
+     * @param mixin $values
+     * @param string $link
+     * @return this
+     * God Bless the Code
+     */
     protected function whereCommon( string $type , $columns , $operator = null , $values = null , string $link = 'and' )
     {
         $this->wheres[] = compact('type','columns','operator','values','link');
@@ -201,6 +345,12 @@ class QueryBuilder
         return $this;
     }
 
+    /**
+     * 绑定值到Columns中
+     * @param mixin $values
+     * @return void
+     * God Bless the Code
+     */
     protected function bindValues( $values )
     {
         if ( is_array($values) ) 
@@ -209,24 +359,38 @@ class QueryBuilder
             {
                 $this->columns[] = $value;
             }
-        }else{
+        }else{ 
             $this->columns[] = $values;
         }
     }
     
-    protected function arrayColumn( array $columns , $link )
+    /**
+     * 处理数组类型column
+     * @param array $columns
+     * @param string $link
+     * @return void
+     * God Bless the Code
+     */
+    protected function arrayColumn( array $columns , string $link )
     {
-        // 二维数组处理
-        if( is_array(current($columns)) )
+        foreach ( $columns as $key => $value) 
         {
-            array_walk($columns,function($column) use ($link)
+            if ( is_numeric($key) )
             {
-                $this->where( ...$column );
-            });
-        }else{
-            $this->where( ...$columns );
+                if ( is_array($value) )
+                {
+                    if( count($value) == 2 )
+                    {
+                        $this->where($value[0],'=',$value[1],$link );
+                    }else{
+                        $value[] = $link;
+                        $this->where(...$value);
+                    }
+                }
+            }else{
+                $this->where( $key , '=', $value, $link );
+            }
         }
-
         return $this;
     }
 
@@ -236,14 +400,20 @@ class QueryBuilder
      * @param \Closure $data
      * @return void
      */
-    protected function anonymousReslove( \Closure $data )
+    protected function anonymousReslove( \Closure $data , $links )
     {
         return call_user_func($data,$this);
     }
 
     #-----------------------------
-    # 插入处理
+    # 获取到SQL语句
     #-----------------------------
+    /**
+     * 获取插入Sql
+     * @param array $insert
+     * @return string
+     * God Bless the Code
+     */
     private function completeInsert( array $insert )
     {
         // 处理字段排序
@@ -262,21 +432,27 @@ class QueryBuilder
             {
                 return '('.$this->disposePlaceholder($value).')';
             },$insert));
-        return "insert into {$this->disposeAlias($this->table)} ($keys) values $values";
+        return "insert into {$this->getTable()} ($keys) values $values";
     }
 
-    private function completeDelect()
+    /**
+     * 获取删除sql
+     * @return void
+     * God Bless the Code
+     */
+    private function completeDelect( array $wheres )
     {
-        var_dump("delete from {$this->disposeAlias($this->table)} {$this->completeWhere()}");
-        var_dump($this->columns);
-        die;
+        return "delete from {$this->getTable()} {$this->completeWhere($wheres)}";
     }
-    #-----------------------------
-    # 处理where类
-    #-----------------------------
-    private function completeWhere()
+    
+    /**
+     * 获取where 类入口 , 分发各个类型的where 函数处理
+     * @return string
+     * God Bless the Code
+     */
+    private function completeWhere( array $wheres )
     {
-        if ( empty($this->wheres) ) 
+        if ( empty($wheres) ) 
         {
             return '';
         }
@@ -284,37 +460,62 @@ class QueryBuilder
         {
             // $this->columns[] = $where['values'];
             return $where['link'].$this->{'completeWhere'.ucfirst($where['type'])}($where);
-        },$this->wheres),function($carry,$item)
+        },$wheres),function($carry,$item)
         {
             return $carry .= $item;
         });
         return 'where'.preg_replace('/and|or/','',$str,1);
     }
-
-
+    
+    /**
+     * 基础类型的where Sql 获取
+     * @param array $where
+     * @return string
+     * God Bless the Code
+     */
     private function completeWhereBasic( array $where )
     {
         return " {$this->disposeCommon($where['columns'])} {$where['operator']} ? ";
     }
 
+    /**
+     * where Between 类型的Sql 获取
+     * @param array $where
+     * @return string
+     * God Bless the Code
+     */
     private function completeWhereBetween( array $where )
     {
         return " {$this->disposeCommon($where['columns'])} {$where['operator']} ? and ? ";
     }
 
+    /**
+     * where In 类型的Sql 获取
+     * @param array $where
+     * @return string
+     * God Bless the Code
+     */
     private function completeWhereIn( array $where )
     {
-        return " {$this->disposeCommon($where['columns'])} {$where['operator']} ({$this->disposePlaceholder($where['values'])})";
+        return " {$this->disposeCommon($where['columns'])} {$where['operator']} ({$this->disposePlaceholder($where['values'])}) ";
     }
+
+
+    private function completeUpdate( array $update ,array $where )
+    {
+        var_dump();
+        var_dump("update {$this->getTable()} set ");
+        die;
+    }
+
+    
+
+
+
+
     #-----------------------------
     # 共用部分
     #-----------------------------
-    
-    public function disposeColumns( $columns )
-    {
-        
-    }
-
 
     /**
      * 判断是否正常的操作
@@ -346,11 +547,11 @@ class QueryBuilder
 
     /**
      * 处理别名
-     * @param String $string
+     * @param string $string
      * @return string
      * God Bless the Code
      */
-    private function disposeAlias( String $string )
+    private function disposeAlias( string $string )
     {
         if (strpos($string , ' as ')) 
         {
@@ -362,13 +563,16 @@ class QueryBuilder
 
     /**
      * 处理key字段,加上`符号
-     * @param String $string
+     * @param string $string
      * @return string
      * God Bless the Code
      */
-    private function disposeCommon( String $string )
+    private function disposeCommon( string $string )
     {
-        return "`$string`";
+        return implode('.',array_map(function($item)
+        {
+            return "`$item`";
+        },explode('.',$string)));
     }
     
     /**
@@ -381,5 +585,23 @@ class QueryBuilder
     private function disposePlaceholder( array $replace , string $operator = "?")
     {
         return implode(', ',array_fill(0,count($replace),$operator));
+    }
+
+    /**
+     * 获取到wheres参数
+     * @return array
+     * God Bless the Code
+     */
+    public function getWheres()
+    {
+        return $this->wheres?: [];
+    }
+
+    /**
+     * 获取表名
+     */
+    public function getTable()
+    {
+        return $this->table ? $this->disposeAlias($this->table) : '';
     }
 }

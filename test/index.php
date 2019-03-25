@@ -15,34 +15,13 @@ $config = [
     'write' => [
         'dbname' => 'write_test',
     ],
-    'user'   => 'root',
-    'pswd'   => 'root',
+    'user' => 'root',
+    'pswd' => 'root',
     // 相同用户名和密码,其他配置相同也可以
 ];
 
 try{
     DBlite::config($config);
-    // $data = [
-    //     [
-    //         'token' => 'token1',
-    //         'where' => 'where1',
-    //         'test'  => 'test1',
-    //     ],
-    //     [
-    //         'where' => 'where2',
-    //         'test'  => 'test2',
-    //         'token' => 'token2',
-    //     ],[
-    //         'token' => 'token1',
-    //         'where' => 'where1',
-    //         'test'  => 'test1',
-    //     ],
-    //     [
-    //         'where' => 'where2',
-    //         'test'  => 'test2',
-    //         'token' => 'token2',
-    //     ]
-    // ];
     $data = [
         ['test',2],
         ['wwww','>',10]
@@ -50,10 +29,28 @@ try{
     // $db = DBlite::table('tb_user')->insert($data);
 
     // $db = DBlite::where(['test',2]);
-    $db = DBlite::table('tb_user')->whereBetween('id',[1,2])->orWhere($data)->delete();
-    var_dump($db);
+    // $insert = [
+    //     [
+    //         'user' => 'test2',
+    //         'password' => '123',
+    //         'created_at' => date('Y-m-d H:i:s')
+    //     ],
+    //     [
+    //         'user' => 'test3',
+    //         'password' => '123',
+    //         'created_at' => date('Y-m-d H:i:s')
+    //     ],
+    //     [
+    //         'user' => 'test3',
+    //         'password' => '123',
+    //         'created_at' => date('Y-m-d H:i:s')
+    //     ],
+    // ];
+    $db = DBlite::table('tb_user')->where('id','1')->update(['user'=>'test2']);
+
 
 }catch(\Exception $e)
 {
-    var_dump( $e->getMessage() );
+    var_dump("Line {$e->getLine()} : {$e->getMessage()}");
+    var_dump($e->getTraceAsString());
 }
