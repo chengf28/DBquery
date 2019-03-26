@@ -115,11 +115,60 @@ class Connect
 	 * @param int $type
 	 * @return mixin
 	 */
-	public function fetch( \PDOStatement $sth,$type = self::ALL)
+	public function fetch( \PDOStatement $sth,$getType = self::ALL,$dataType= PDO::FETCH_ASSOC)
 	{
-		if ($type == self::ALL) 
+		switch ($getType) 
 		{
-			return $sth->fetchAll(PDO::FETCH_OBJ);
+			case self::ALL:
+				return $sth->fetchAll($dataType);
+				break;
+			case self::ONE:
+				return $sth->fetch($dataType);
+				break;
 		}
+	}
+
+	/**
+	 * 以关联数组形式获取所有数据
+	 * @param \PDOStatement $sth
+	 * @return array
+	 * God Bless the Code
+	 */
+	public function fetchAllArr( \PDOStatement $sth )
+	{
+		return $this->fetch($sth,self::ALL,PDO::FETCH_ASSOC);
+	}
+
+	/**
+	 * 以对象形式获取到所有的数据
+	 * @param \PDOStatement $sth
+	 * @return object
+	 * God Bless the Code
+	 */
+	public function fetchAllObj( \PDOStatement $sth )
+	{
+		return $this->fetch($sth,self::ALL,PDO::FETCH_OBJ);
+	}
+
+	/**
+	 * 以关联数组的形式获取到一个数据
+	 * @param \PDOStatement $sth
+	 * @return array
+	 * God Bless the Code
+	 */
+	public function fetchOneArr( \PDOStatement $sth )
+	{
+		return $this->fetch($sth , self::ONE , PDO::FETCH_ASSOC);
+	}
+
+	/**
+	 * 以对象形式获取到一个数据
+	 * @param \PDOStatement $sth
+	 * @return object
+	 * God Bless the Code
+	 */
+	public function fetchOneObj( \PDOStatement $sth )
+	{
+		return $this->fetch($sth , self::ONE , PDO::FETCH_OBJ);
 	}
 }

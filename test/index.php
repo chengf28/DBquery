@@ -46,8 +46,8 @@ try{
     //         'created_at' => date('Y-m-d H:i:s')
     //     ],
     // ];
-    $db = DBlite::table('tb_user')->where('id','1')->update(['user'=>'test2']);
-
+    $db = DBlite::table('tb_user')->useWrite()->orderBy('id','desc')->find(3);
+    var_dump($db);
 
 }catch(\Exception $e)
 {

@@ -12,6 +12,8 @@ class QueryBuilder
 		'=','>','<>','<','like','!=','<=','>=','+','-','/','*','%','IS NULL','IS NOT NULL','LEAST','GREATEST','BETWEEN','IN','NOT BETWEEN','NOT IN','REGEXP'
     ];
 
+    protected $query = [];
+    
     protected $table;
 
     protected $columns;
@@ -22,7 +24,8 @@ class QueryBuilder
 
     protected $connect;
 
-    protected $useWrite = false;
+    protected $useWrite;
+    
 
     /**
      * 构造函数,依赖注入PDO底层
@@ -54,7 +57,7 @@ class QueryBuilder
 
     /**
      * 使用写库
-     * @return void
+     * @return this
      * God Bless the Code
      */
     public function useWrite()
@@ -62,10 +65,16 @@ class QueryBuilder
         $this->useWrite = true;
         return $this;
     }
-
+    
+    /**
+     * 使用读库
+     * @return this
+     * God Bless the Code
+     */
     public function useRead()
     {
-
+        $this->useWrite = '';
+        return $this;
     }
     
     #-----------------------------
@@ -80,7 +89,7 @@ class QueryBuilder
      */
     public function insert( array $insert )
     {
-        $sth = $this->insertCommon($insert,$this->useWrite);
+        $sth = $this->insertCommon($insert, $this->isWrite( true ) );
         // 返回受影响的行数
         return $sth->rowCount();
     }
@@ -93,7 +102,7 @@ class QueryBuilder
      */
     public function insertGetId( array $insert )
     {
-        $this->insertCommon($insert,true);
+        $this->insertCommon($insert,$this->isWrite( true ));
         $id = $this->connect->getLastId(true);
         if ( ($count = count($insert)) > 1 )
         {
@@ -132,7 +141,6 @@ class QueryBuilder
     #-----------------------------
     # 删除
     #-----------------------------
-
     /**
      * 删除删除数据,返回受影响行数
      * @param int $id
@@ -148,15 +156,12 @@ class QueryBuilder
         return $this->run(
             $this->completeDelect($this->getWheres()),
             $this->getBinds(),
-            true
+            $this->isWrite(true)
         )->rowCount();
     }
-
-
     #-----------------------------
     # 更新
     #-----------------------------
-    
     /**
      * 更新内容,返回受影响行数
      * @param array $update
@@ -174,7 +179,7 @@ class QueryBuilder
         return $this->run(
             $this->completeUpdate($update,$this->getWheres()),
             $this->megreValues($this->getBinds(),array_values($update)),
-            true
+            $this->isWrite(true)
         )->rowCount();
     }
 
@@ -182,20 +187,118 @@ class QueryBuilder
     # 查找
     #-----------------------------
 
+    /**
+     * 获取所有数据
+     * @return mixin
+     * God Bless the Code
+     */
     public function get()
     {
-        return $this->connect->fetch(
-            $this->run(
-            $this->completeSelect($this->getColums(),$this->getWheres()),
-            $this->megreValues($this->getBinds(),[])
-            ,$this->useWrite)
-        );
+        return $this->getCommon();
     }
 
+    /**
+     * QueryBuilder::get别名
+     * @return mixin
+     * God Bless the Code
+     */
+    public function all()
+    {
+        return $this->get();
+    }
+
+    /**
+     * 添加筛选字段
+     * @param array $columns
+     * @return this
+     * God Bless the Code
+     */
     public function select( $columns = ['*'] )
     {
         $this->columns = is_array($columns) ? $columns : func_get_args();
 		return $this;
+    }
+
+    /**
+     * get 别名,快速查找主键ID;
+     * @param string $id
+     * @return void
+     * God Bless the Code
+     */
+    public function find( string $id )
+    {
+        return $this->where('id',$id)->getCommon(3);
+    }
+
+    /**
+     * 查询共用部分
+     * @return void
+     * God Bless the Code
+     */
+    protected function getCommon( $type = 1 )
+    {
+        $all = [
+            '1'=>'fetchAllArr',
+            '2'=>'fetchAllObj',
+            '3'=>'fetchOneArr',
+            '4'=>'fetchOneObj'
+        ];
+
+        $method = isset($all[$type]) ? $all[$type] : $all[1];
+
+        return $this->connect->{$method}(
+            $this->run(
+                $this->completeSelect($this->getColums(),$this->getWheres()),
+                $this->megreValues($this->getBinds(),[]),
+                $this->isWrite(false)
+            )
+        );
+    }
+
+    #-----------------------------
+    # 其他
+    #-----------------------------
+
+    /**
+     * 添加limit字段
+     * @param int $start
+     * @param int $end
+     * @return void
+     * God Bless the Code
+     */
+    public function limit( $start = 0 , $end = null )
+    {
+        if ( is_null($end)) 
+        {
+            $end = $start;
+            $start = 0;
+        }
+        if ($start == $end && $start == 0) 
+        {
+            $end = 1;
+        }
+        $this->query['3limit'] = compact('start','end');
+        return $this;
+    }
+
+
+    /**
+     * 处理order by 
+     * @param string $key
+     * @param string $order
+     * @return void
+     * God Bless the Code
+     */
+    public function orderBy( string $key , string $order )
+    {
+        $this->query['2order'][trim($key)] = trim($order);
+        return $this;
+    }
+
+    public function groupBy()
+    {
+        $this->query['1group'] = func_get_args();
+        return $this;
     }
 
     /**
@@ -208,6 +311,7 @@ class QueryBuilder
      */
     private function run( string $sql , $values = [] , $useWrite = true )
     {
+        var_dump($sql);die;
         return $this->connect->statementExecute(
             $this->connect->statementPrepare($sql,$useWrite),
             $values            
@@ -553,15 +657,65 @@ class QueryBuilder
         return "update {$this->getTable()} set {$sql}{$this->completeWhere($wheres)}";
     }
 
-
-    private function completeSelect( array $selects = [] , array $wheres )
+    /**
+     * 获取 select 类型的SQL语句
+     * @param array $selects
+     * @param array $wheres
+     * @return string
+     * God Bless the Code
+     */
+    private function completeSelect( array $selects = [] , array $wheres , $query = [])
     {
         if( empty($selects) )
         {
             $selects = ['*'];
         }
         $select = implode(',',$this->disposeCommon($selects));
+        ksort($query);
+        foreach ($query as $key => $value) 
+        {
+            $this->{'complete'.ucfirst(substr($key,1))}($value);
+        }
+
         return "select {$select} from {$this->getTable()} {$this->completeWhere($wheres)}";
+    }
+
+    /**
+     * 获取 limit 类型的SQL语句
+     * @return string
+     * God Bless the Code
+     */
+    private function completeLimit( array $limit = [] )
+    {
+        if( empty( $limit ) )
+        {
+            return "";
+        }
+        return "limit ".implode(',', $limit );
+    }
+
+    private function completeGroup( array $group = [] )
+    {
+        if ( empty($group) ) 
+        {
+            return "";
+        }
+        return "group by ";
+    }
+
+    private function completeOrder( array $order = [] )
+    {
+        if ( empty($order) ) 
+        {
+            return "";
+        }
+        
+        foreach ($order as $key => &$value) 
+        {
+            $value = "{$this->disposeCommon($key)} {$value}";
+        }
+        unset($value);
+        return "order by ".implode(',',$order);
     }
 
     #-----------------------------
@@ -682,15 +836,33 @@ class QueryBuilder
 
     /**
      * 获取表名
+     * @return string
+     * God Bless the Code
      */
     public function getTable()
     {
         return $this->table ? $this->disposeAlias($this->table) : '';
     }
 
+    /**
+     * 获取 select 字段 筛选内容
+     * @return array
+     * God Bless the Code
+     */
     public function getColums()
     {
         return $this->columns?:[];
+    }
+
+    /**
+     * 是否使用写库
+     * @param bool $default
+     * @return bool
+     * God Bless the Code
+     */
+    public function isWrite( bool $default )
+    {
+        return empty($this->useWrite) ? $default : $this->useWrite;
     }
     
 }
