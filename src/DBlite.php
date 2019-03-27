@@ -44,11 +44,13 @@ class DBlite
 	protected static function disposeConfig( array $config )
 	{
 		$ret = [];
+		$ret['write'] =  self::parseConfig($config,!self::hasWrite($config) ? self::hasRead($config) ? "read":null:"write");
 		if ( self::hasRead($config) )
 		{
 			$ret['read'] = self::parseConfig($config,"read");
+		}else{
+			$ret['read'] = $ret['write'];
 		}
-		$ret['write'] =  self::parseConfig($config,self::hasWrite($config) ? "write" : null);
 		return $ret;
 	}
 
@@ -162,6 +164,7 @@ class DBlite
 	 */
 	public static function createPdo( array $config )
 	{
+		var_dump($config);die;
 		try
 		{
 			$pdo = new Connect(new PDO( $readPdo = $config['dbtype'].":".$config['read']['string'],$config['read']['user'],$config['read']['pswd']));
