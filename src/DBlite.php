@@ -164,7 +164,6 @@ class DBlite
 	 */
 	public static function createPdo( array $config )
 	{
-		var_dump($config);die;
 		try
 		{
 			$pdo = new Connect(new PDO( $readPdo = $config['dbtype'].":".$config['read']['string'],$config['read']['user'],$config['read']['pswd']));
@@ -194,5 +193,13 @@ class DBlite
 	{
 		// 框架化,可在此处使用容器注入依赖,插件使用,固定写死底层;
 		return (new Query(self::$pdo))->$method(...$args);
+	}
+
+	public static function raw( string $string )
+	{
+		return function() use ( $string )
+		{
+			return $string;
+		};
 	}
 }
