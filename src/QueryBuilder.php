@@ -1,6 +1,8 @@
 <?php
 namespace DBlite;
+use PDOStatement;
 use DBlite\Connect;
+use DBlite\QueryBuilder;
 /**
  * 语句构建类
  * @author chengf28 <chengf_28@163.com>
@@ -144,7 +146,7 @@ class QueryBuilder
     /**
      * 删除删除数据,返回受影响行数
      * @param int $id
-     * @return void
+     * @return int
      * God Bless the Code
      */
     public function delete( $id = null )
@@ -154,7 +156,7 @@ class QueryBuilder
             $this->where('id',$id);
         }
         return $this->run(
-            $this->completeDelect($this->getWheres()),
+            $this->completeDelete($this->getWheres()),
             $this->getBinds(),
             $this->isWrite(true)
         )->rowCount();
@@ -329,10 +331,11 @@ class QueryBuilder
             return $this->arrayColumn( $columns , $link );
         }
 
-        if ( $columns instanceof \Closure ) 
-        {
+        // if ( $columns instanceof \Closure ) 
+        // {
             
-        }
+        // }
+        
         // 只有2个参数
         if ( is_null($values) && !$this->isOperator($operator)  && func_num_args() ==2 ) 
         {
@@ -578,7 +581,7 @@ class QueryBuilder
      * @return void
      * God Bless the Code
      */
-    private function completeDelect( array $wheres )
+    private function completeDelete( array $wheres )
     {
         return "delete from {$this->getTable()} {$this->completeWhere($wheres)}";
     }
