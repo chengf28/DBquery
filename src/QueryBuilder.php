@@ -73,7 +73,7 @@ class QueryBuilder
      */
     public function useRead()
     {
-        $this->useWrite = '';
+        $this->useWrite = false;
         return $this;
     }
     
@@ -117,7 +117,7 @@ class QueryBuilder
      * @param array $insert
      * @return \PDOStatement $sth;
      */
-    protected function insertCommon( array $insert , $write = true )
+    protected function insertCommon( array $insert , $write  )
     {
         // 如果是空数组则直接返回true
         if ( empty($insert) || empty(current($insert)) ) 
@@ -248,9 +248,9 @@ class QueryBuilder
 
         return $this->connect->{$method}(
             $this->run(
-                $this->completeSelect($this->getColums(),$this->getWheres()),
+                $this->completeSelect($this->getColums(),$this->getWheres(),$this->query),
                 $this->megreValues($this->getBinds(),[]),
-                $this->isWrite(false)
+                $this->isWrite()
             )
         );
     }
@@ -311,7 +311,6 @@ class QueryBuilder
      */
     private function run( string $sql , $values = [] , $useWrite = true )
     {
-        var_dump($sql);die;
         return $this->connect->statementExecute(
             $this->connect->statementPrepare($sql,$useWrite),
             $values            
@@ -534,7 +533,7 @@ class QueryBuilder
     }
 
     /**
-     * 处理Clusore函数
+     * 处理Closure函数
      * @author chengf28 <chengf_28@163.com>
      * @param \Closure $data
      * @return void
@@ -672,12 +671,14 @@ class QueryBuilder
         }
         $select = implode(',',$this->disposeCommon($selects));
         ksort($query);
-        foreach ($query as $key => $value) 
+        foreach ($query as $key => &$value) 
         {
-            $this->{'complete'.ucfirst(substr($key,1))}($value);
+            $value = $this->{'complete'.ucfirst(substr($key,1))}($value);
         }
-
-        return "select {$select} from {$this->getTable()} {$this->completeWhere($wheres)}";
+        
+        return "select {$select} from {$this->getTable()} {$this->completeWhere($wheres)} ".array_reduce($query,function($carry,$item){
+            return $carry .= ' '.$item;
+        });
     }
 
     /**
@@ -696,11 +697,14 @@ class QueryBuilder
 
     private function completeGroup( array $group = [] )
     {
-        if ( empty($group) ) 
+        if ( empty( $group ) ) 
         {
             return "";
         }
-        return "group by ";
+        return "group by ".implode(', ',array_map(function($value)
+        {
+            return $this->disposeCommon($value);
+        },$group));
     }
 
     private function completeOrder( array $order = [] )
@@ -798,7 +802,13 @@ class QueryBuilder
                 return $this->disposeCommon($value);
             },$key);
         }
-        if ($key == '*') 
+        if ( $key instanceof \Closure ) 
+        {
+            return call_user_func($key,$this);
+        }
+
+ 
+        if ($key == '*')
         {
             return $key;
         }
@@ -860,9 +870,18 @@ class QueryBuilder
      * @return bool
      * God Bless the Code
      */
-    public function isWrite( bool $default )
+    public function isWrite( bool $default = null )
     {
-        return empty($this->useWrite) ? $default : $this->useWrite;
+        if( is_bool($this->useWrite) )
+        {
+            return $this->useWrite;
+        }
+
+        if( is_null($default) )
+        {
+            return false;
+        }
+        return $default;
     }
     
 }
