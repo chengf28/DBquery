@@ -195,6 +195,12 @@ class DBlite
 		return (new Query(self::$pdo))->$method(...$args);
 	}
 
+	/**
+	 * 使用原始数据
+	 * @param string $string
+	 * @return string
+	 * God Bless the Code
+	 */
 	public static function raw( string $string )
 	{
 		return function() use ( $string )
