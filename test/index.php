@@ -7,13 +7,13 @@ use DBlite\DBlite;
 $config = [
     // 预留配置,可不填写,目前仅支持mysql
     'dbtype' => 'MYSQL',
-    'read' => [
-        'dbname' => 'read_test',
-    ],
     'host'  => '127.0.0.1',
     'port'  => 3306,
     'write' => [
         'dbname' => 'write_test',
+    ],
+    'read' =>[
+        'dbname' => 'read_test',
     ],
     'user' => 'root',
     'pswd' => 'root',
@@ -46,8 +46,10 @@ try{
     //         'created_at' => date('Y-m-d H:i:s')
     //     ],
     // ];
-    $db = DBlite::table('tb_user')->useWrite()->orderBy('id','desc')->find(3);
-    var_dump($db);
+    $db = DBlite::table('tb_user');
+    $res = $db->select(DBlite::raw('count(1) as num'))->groupBy('password','created_at')->get();
+    var_dump($res);
+    
 
 }catch(\Exception $e)
 {
