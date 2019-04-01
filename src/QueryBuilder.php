@@ -2,9 +2,8 @@
 namespace DBlite;
 use PDOStatement;
 use DBlite\Connect;
-use DBlite\QueryBuilder;
 /**
- * 语句构建类
+ * 语句构建
  * @author chengf28 <chengf_28@163.com>
  * God Bless the Code
  */
@@ -31,7 +30,6 @@ class QueryBuilder
 
     /**
      * 构造函数,依赖注入PDO底层
-     * @author chengf28 <chengf_28@163.com>
      * @param \DBlite\Connect $connect
      * God Bless the Code
      */
@@ -43,23 +41,18 @@ class QueryBuilder
     /**
      * 设置表名
      * @param string $table
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function table( string $table)
     {
-        // 如果是数组类型的数据表
-        if ( is_array($table) ) 
-        {
-            $table = implode( ',' , $table );
-        }
         $this->table = $table;
         return $this;
     }
 
     /**
      * 使用写库
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function useWrite()
@@ -70,7 +63,7 @@ class QueryBuilder
     
     /**
      * 使用读库
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function useRead()
@@ -85,7 +78,6 @@ class QueryBuilder
 
     /**
      * 插入数据,返回受影响行数
-     * @author chengf28 <chengf_28@163.com>
      * @param array $insert
      * @return integer
      */
@@ -98,7 +90,6 @@ class QueryBuilder
 
     /**
      * 插入数据,获取最后的ID
-     * @author chengf28 <chengf_28@163.com>
      * @param array $insert
      * @return integer
      */
@@ -115,7 +106,6 @@ class QueryBuilder
 
     /**
      * insert公共功能
-     * @author chengf28 <chengf_28@163.com>
      * @param array $insert
      * @return \PDOStatement $sth;
      */
@@ -212,7 +202,7 @@ class QueryBuilder
     /**
      * 添加筛选字段
      * @param array $columns
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function select( $columns = ['*'] )
@@ -224,12 +214,26 @@ class QueryBuilder
     /**
      * get 别名,快速查找主键ID;
      * @param string $id
-     * @return void
+     * @return mixin
      * God Bless the Code
      */
-    public function find( string $id )
+    public function find( string $id = null )
     {
-        return $this->where('id',$id)->getCommon(3);
+        if (is_null($id)) 
+        {
+            return $this->first();
+        }
+        return $this->where('id',$id)->first();
+    }
+
+    /**
+     * 查找第一个
+     * @return mixin
+     * God Bless the Code
+     */
+    public function first()
+    {
+        return $this->getCommon(3);
     }
 
     /**
@@ -265,7 +269,7 @@ class QueryBuilder
      * 添加limit字段
      * @param int $start
      * @param int $end
-     * @return void
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function limit( $start = 0 , $end = null )
@@ -288,7 +292,7 @@ class QueryBuilder
      * 处理order by 
      * @param string $key
      * @param string $order
-     * @return void
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function orderBy( string $key , string $order )
@@ -297,6 +301,11 @@ class QueryBuilder
         return $this;
     }
 
+    /**
+     * 处理 group by 
+     * @return \DBlite\QueryBuilder::class
+     * God Bless the Code
+     */
     public function groupBy()
     {
         $this->query['1group'] = func_get_args();
@@ -306,7 +315,7 @@ class QueryBuilder
     /**
      * 执行sql  
      * @param string $sql
-     * @param mixin $values
+     * @param array $values
      * @param bool $useWrite
      * @return \PDOStatement::class
      * God Bless the Code
@@ -352,7 +361,7 @@ class QueryBuilder
      * @param mixin $columns
      * @param mixin $operator
      * @param mixin $values
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function orWhere( $columns , $operator = null, $values = null )
@@ -366,7 +375,7 @@ class QueryBuilder
      * @param array $values
      * @param string $link
      * @param bool $boolean
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function whereBetween( string $columns , array $values , string $link = 'and' , bool $boolean = true )
@@ -380,7 +389,7 @@ class QueryBuilder
      * 处理 `where key not between (x,x)`
      * @param string $columns
      * @param array $values
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function whereNotBetween( string $columns , array $values )
@@ -392,7 +401,7 @@ class QueryBuilder
      * 处理 `where or between (x,x)`
      * @param string $columns
      * @param array $values
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function orWhereBetween( string $columns , array $values )
@@ -404,7 +413,7 @@ class QueryBuilder
      * 处理 ` where or key not between (x,x)`
      * @param string $columns
      * @param array $values
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function orWhereNotBetween( string $columns , array $values)
@@ -418,7 +427,7 @@ class QueryBuilder
      * @param array $values
      * @param string $link
      * @param bool $boolean
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function whereIn( string $columns , array $values , string $link = 'and' , bool $boolean = true )
@@ -432,7 +441,7 @@ class QueryBuilder
      * 处理 ` where key not in (x,x)` 语句
      * @param string $columns
      * @param array $values
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function whereNotIn( string $columns , array $values )
@@ -444,7 +453,7 @@ class QueryBuilder
      * 处理 ` where or in ` 语句
      * @param string $columns
      * @param array $values
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function orWhereIn( string $columns , array $values )
@@ -456,7 +465,7 @@ class QueryBuilder
      * 处理 ` where or not in ` 语句
      * @param string $columns
      * @param array $values
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     public function orWhereNotIn( string $columns , array $values )
@@ -471,7 +480,7 @@ class QueryBuilder
      * @param string $operator
      * @param mixin $values
      * @param string $link
-     * @return this
+     * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
     protected function whereCommon( string $type , $columns , $operator = null , $values = null , string $link = 'and' )
@@ -537,7 +546,6 @@ class QueryBuilder
 
     /**
      * 处理Closure函数
-     * @author chengf28 <chengf_28@163.com>
      * @param \Closure $data
      * @return void
      */
@@ -578,7 +586,7 @@ class QueryBuilder
 
     /**
      * 获取删除sql
-     * @return void
+     * @return string
      * God Bless the Code
      */
     private function completeDelete( array $wheres )
@@ -792,8 +800,8 @@ class QueryBuilder
 
     /**
      * 处理key字段,加上`符号
-     * @param mixin $string
-     * @return string
+     * @param  string|array $key
+     * @return string|array
      * God Bless the Code
      */
     private function disposeCommon( $key )
@@ -809,7 +817,6 @@ class QueryBuilder
         {
             return call_user_func($key,$this);
         }
-
  
         if ($key == '*')
         {

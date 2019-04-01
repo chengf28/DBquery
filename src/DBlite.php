@@ -38,7 +38,7 @@ class DBlite
 	/**
 	 * 处理配置文件
 	 * @param array $config
-	 * @return void
+	 * @return array
 	 * God Bless the Code
 	 */
 	protected static function disposeConfig( array $config )
@@ -130,7 +130,7 @@ class DBlite
 	 * 转换大小写
 	 * @param array $array
 	 * @param int $key
-	 * @return void
+	 * @return array
 	 * God Bless the Code
 	 */
 	public static function changeKeyCase( array $array, int $key = CASE_LOWER )
@@ -166,14 +166,25 @@ class DBlite
 	{
 		try
 		{
-			$pdo = new Connect(new PDO( $readPdo = $config['dbtype'].":".$config['read']['string'],$config['read']['user'],$config['read']['pswd']));
+			$pdo = new Connect(
+				$readPdo = new PDO( 
+						$config['dbtype'].":".$config['read']['string'],
+						$config['read']['user'],
+						$config['read']['pswd'],[]
+					)
+			);
 			
 			// 如果读写分离,创造写库
 			if ( self::hasWrite($config) ) 
 			{
-				$pdo->setWritePdo(new PDO($config['dbtype'].":".$config['write']['string'],$config['write']['user'],$config['write']['pswd']));
+				$pdo->setWritePdo(new PDO(
+						$config['dbtype'].":".$config['write']['string'],
+						$config['write']['user'],
+						$config['write']['pswd'],[]
+					)
+				);
 			}else{
-				$pdo->setWritePdo($readPdo);
+				$pdo->setWritePdo( $readPdo );
 			}
 			return $pdo;
 		}catch(\PDOException $e)
