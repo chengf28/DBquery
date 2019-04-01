@@ -3,7 +3,7 @@
 
 ## [BUG反馈及建议][issues]
 Github Issues: <https://github.com/chengf28/DBlite/issues>
-## 添加 add
+## 添加 Add
 * composer:
 
 直接在项目根目录中执行`composer require chengf28/dblite` , 即可加载该包到项目vender/chengf28目录中(如果目录中没有composer.json 会自动生成)
