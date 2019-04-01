@@ -433,7 +433,6 @@ class QueryBuilder
      */
     private function run( string $sql , $values = [] , $useWrite = true )
     {
-        var_dump($sql);
         return $this->connect->statementExecute(
             $this->connect->statementPrepare($sql,$useWrite),
             $values            
