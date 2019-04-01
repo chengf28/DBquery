@@ -1,6 +1,5 @@
 <?php
 namespace DBlite;
-use PDOStatement;
 use DBlite\Connect;
 /**
  * 语句构建

@@ -46,13 +46,12 @@ try{
     //         'created_at' => date('Y-m-d H:i:s')
     //     ],
     // ];
-    $db = DBlite::table('tb_user');
-    $res = $db->select(DBlite::raw('count(1) as num'))->groupBy('password','created_at')->get();
+    $db  = DBlite::table('tb_user');
+    $res = $db->find();
     var_dump($res);
     
-
 }catch(\Exception $e)
 {
-    var_dump("Line {$e->getLine()} : {$e->getMessage()}");
-    var_dump($e->getTraceAsString());
+    var_dump( "Line {$e->getLine()} : {$e->getMessage()}" );
+    var_dump( $e->getTraceAsString() );
 }
