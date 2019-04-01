@@ -12,21 +12,54 @@ class QueryBuilder
 		'=','>','<>','<','like','!=','<=','>=','+','-','/','*','%','IS NULL','IS NOT NULL','LEAST','GREATEST','BETWEEN','IN','NOT BETWEEN','NOT IN','REGEXP'
     ];
 
+    /**
+     * query查询需要字段容器
+     * @var array
+     * God Bless the Code
+     */
     protected $query = [];
     
+    /**
+     * 主表表名
+     * @var string
+     * God Bless the Code
+     */
     protected $table;
 
+    /**
+     * select 字段容器
+     * @var array
+     */
     protected $columns;
 
+    /**
+     * where 字段值容器
+     * @var array
+     * God Bless the Code
+     */
     protected $binds;
 
+    /**
+     * where 字段容器
+     * @var array
+     * God Bless the Code
+     */
     protected $wheres;
 
+    /**
+     * 数据库操作层容器
+     * @var \DBlite\Connect::class
+     * God Bless the Code
+     */
     protected $connect;
 
+    /**
+     * 是否使用写库
+     * @var boolean
+     * God Bless the Code
+     */
     protected $useWrite;
     
-
     /**
      * 构造函数,依赖注入PDO底层
      * @param \DBlite\Connect $connect
@@ -180,7 +213,7 @@ class QueryBuilder
 
     /**
      * 获取所有数据
-     * @return mixin
+     * @return mixed
      * God Bless the Code
      */
     public function get()
@@ -190,7 +223,7 @@ class QueryBuilder
 
     /**
      * QueryBuilder::get别名
-     * @return mixin
+     * @return mixed
      * God Bless the Code
      */
     public function all()
@@ -213,7 +246,7 @@ class QueryBuilder
     /**
      * get 别名,快速查找主键ID;
      * @param string $id
-     * @return mixin
+     * @return mixed
      * God Bless the Code
      */
     public function find( string $id = null )
@@ -227,7 +260,7 @@ class QueryBuilder
 
     /**
      * 查找第一个
-     * @return mixin
+     * @return mixed
      * God Bless the Code
      */
     public function first()
@@ -261,6 +294,85 @@ class QueryBuilder
     }
 
     #-----------------------------
+    # 联表
+    #-----------------------------
+    /**
+     * 左联表查询
+     * @param string $table
+     * @param mixed  $columnOne
+     * @param string $operator
+     * @param string $columnTwo
+     * @return \DBlite\QueryBuilder::class
+     * God Bless the Code
+     */
+    public function leftjoin( string $table , $columnOne , string $operator = null , string $columnTwo = null )
+    {
+        return $this->join($table,$columnOne,$operator,$columnTwo,'left join');
+    }
+
+    /**
+     * 右联表查询
+     * @param string $table
+     * @param mixed  $columnOne
+     * @param string $operator
+     * @param string $columnTwo
+     * @return \DBlite\QueryBuilder::class
+     * God Bless the Code
+     */
+    public function rigthjoin(string $table,$columnOne, string $operator = null, string $columnTwo = null)
+    {
+        return $this->join($table,$columnOne,$operator,$columnTwo,'rigth join');
+    }
+
+    /**
+     * 内联查询
+     * @param string $table
+     * @param mixed  $columnOne
+     * @param string $operator
+     * @param string $columnTwo
+     * @return \DBlite\QueryBuilder::class
+     * God Bless the Code
+     */
+    public function innerjoin(string $table, $columnOne, string $operator = null, string $columnTwo = null)
+    {
+        return $this->join($table,$columnOne,$operator,$columnTwo,'inner join');
+    }
+
+    /**
+     * 处理 join 语句
+     * @param string $table
+     * @param mixed  $columnOne
+     * @param string $operator
+     * @param string $columnTwo
+     * @param string $link
+     * @return \DBlite\QueryBuilder::class
+     * God Bless the Code
+     */
+    public function join( string $table , $columnOne , string $operator = null , string $columnTwo = null , $link = 'join')
+    {
+        $argsNum = func_num_args();
+        if ( $argsNum === 2 && is_array($columnOne) )
+        {
+            list($columnOne,$columnTwo) = $columnOne;
+            $operator = '=';
+        }
+
+        if ( $argsNum === 3 && !$this->isOperator($operator) )
+        {
+            $columnTwo = $operator;
+            $operator  = '=';
+        }
+        
+        if ( !$this->isOperator($operator) )
+        {
+            $operator = '=';
+        }
+
+        $this->query['1join'][] = compact('table','columnOne', 'operator','columnTwo', 'link');
+        return $this;
+    }
+
+    #-----------------------------
     # 其他
     #-----------------------------
 
@@ -271,7 +383,7 @@ class QueryBuilder
      * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
-    public function limit( $start = 0 , $end = null )
+    public function limit( int $start = 0 , int $end = null )
     {
         if ( is_null($end)) 
         {
@@ -282,7 +394,7 @@ class QueryBuilder
         {
             $end = 1;
         }
-        $this->query['3limit'] = compact('start','end');
+        $this->query['4limit'] = compact('start','end');
         return $this;
     }
 
@@ -296,7 +408,7 @@ class QueryBuilder
      */
     public function orderBy( string $key , string $order )
     {
-        $this->query['2order'][trim($key)] = trim($order);
+        $this->query['3order'][trim($key)] = trim($order);
         return $this;
     }
 
@@ -307,7 +419,7 @@ class QueryBuilder
      */
     public function groupBy()
     {
-        $this->query['1group'] = func_get_args();
+        $this->query['2group'] = func_get_args();
         return $this;
     }
 
@@ -321,6 +433,7 @@ class QueryBuilder
      */
     private function run( string $sql , $values = [] , $useWrite = true )
     {
+        var_dump($sql);
         return $this->connect->statementExecute(
             $this->connect->statementPrepare($sql,$useWrite),
             $values            
@@ -357,9 +470,9 @@ class QueryBuilder
 
     /**
      * 处理` or where 语句`
-     * @param mixin $columns
-     * @param mixin $operator
-     * @param mixin $values
+     * @param mixed $columns
+     * @param mixed $operator
+     * @param mixed $values
      * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
@@ -475,9 +588,9 @@ class QueryBuilder
     /**
      * where 公告处理部分
      * @param string $type
-     * @param mixin $columns
+     * @param mixed $columns
      * @param string $operator
-     * @param mixin $values
+     * @param mixed $values
      * @param string $link
      * @return \DBlite\QueryBuilder::class
      * God Bless the Code
@@ -491,7 +604,7 @@ class QueryBuilder
 
     /**
      * 绑定值到Columns中
-     * @param mixin $values
+     * @param mixed $values
      * @return void
      * God Bless the Code
      */
@@ -693,6 +806,7 @@ class QueryBuilder
 
     /**
      * 获取 limit 类型的SQL语句
+     * @param array $limit
      * @return string
      * God Bless the Code
      */
@@ -705,6 +819,12 @@ class QueryBuilder
         return "limit ".implode(',', $limit );
     }
 
+    /**
+     * 获取 group by 类型的SQL语句
+     * @param array $group
+     * @return string
+     * God Bless the Code
+     */
     private function completeGroup( array $group = [] )
     {
         if ( empty( $group ) ) 
@@ -730,6 +850,17 @@ class QueryBuilder
         }
         unset($value);
         return "order by ".implode(',',$order);
+    }
+
+    private function completeJoin( array $joins = [] )
+    {
+        return array_reduce( array_map(function ($item) 
+        {
+            return "{$item['link']} {$this->disposeAlias($item['table'])} on {$this->disposeCommon($item['columnOne'])} {$item['operator']} {$this->disposeCommon($item['columnTwo'])} ";
+        }, $joins),function($carry , $item)
+        {
+            return $carry .= $item;
+        });
     }
 
     #-----------------------------
@@ -892,5 +1023,21 @@ class QueryBuilder
         }
         return $default;
     }
-    
+
+    /**
+     * 调用不存在的方法
+     * @param string $method
+     * @param array $args
+     * @return void
+     * God Bless the Code
+     */
+    public function __call( $method , $args)
+    {
+        if ( method_exists( __CLASS__,strtolower($method) ) )
+        {
+            return $this->$method(...$args);
+        }else{
+            throw new \Exception(__CLASS__."::{$method}() not found", 1);
+        }
+    }
 }

@@ -23,7 +23,7 @@ class DBlite
 	 * @author: chengf28
 	 * God Bless the Code
 	 * @param  array  $input_config 传入的配置文件
-	 * @return Connect::class
+	 * @return \DBlite\Connect::class
 	 */
 	public static function config( array $input_config )
 	{
@@ -160,7 +160,7 @@ class DBlite
 	/**
 	 * 创建PDO类
 	 * @param array $config
-	 * @return void
+	 * @return \DBlite\Connect::class
 	 */
 	public static function createPdo( array $config )
 	{
@@ -197,7 +197,7 @@ class DBlite
 	 * 调用其他类
 	 *
 	 * @param string $method
-	 * @param mixin $args
+	 * @param array  $args
 	 * @return QueryBuilder::class
 	 */
 	public static function __callStatic( $method , $args )
