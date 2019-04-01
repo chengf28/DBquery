@@ -131,6 +131,8 @@ $config = [
         * 返回 : array 返回所有数据;
     * `DBlite::all()` 
         * get()的别名
+    * `DBlite::first()`
+        * 查找一个数据,默认数据表中第一列数据
     * `DBlite::find($id)` 
         * $id : 主键id , 默认认为在表中存名为ID的主键
         * for example :
