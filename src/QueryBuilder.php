@@ -348,7 +348,7 @@ class QueryBuilder
      * @return \DBlite\QueryBuilder::class
      * God Bless the Code
      */
-    public function join( string $table , $columnOne , string $operator = null , string $columnTwo = null , $link = 'join')
+    public function join( string $table , $columnOne , string $operator = null , string $columnTwo = null , string $link = 'join')
     {
         $argsNum = func_num_args();
         if ( $argsNum === 2 && is_array($columnOne) )

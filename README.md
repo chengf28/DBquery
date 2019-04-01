@@ -248,10 +248,59 @@ $config = [
         * where ... or between and 其他详见 whereIn参数
     * `DBlite::orwhereNotIn(string $columns , array $values [, string $link , boolean $boolean] )`
         * where ... or not between and 其他详见 whereIn参数
-    
-    
-    
-
+    * `DBlite::raw(string $string)`   
+        * $string : 原生的 sql 字段,配合select 使用, 默认select() 默认会为列字段加上\`\`符号,会导致mysql的函数无法执行,可以是用raw()方法去除\`\`符号的添加;
+* 分页
+    * `DBlite::limit( int $start [,int $end ] )`
+        * $start : 开始位置,如果只有一个参数,开始位置默认为0,$start为结束位置;
+        * $end : 结束位置
+        * for example :
+        ```php
+        // limit 0 , 10
+        DBlite::table('table_name')->limit(10)->get();
+        // limit 5 , 10
+        DBlite::table('table_name')->limit(5,10)->get();
+        ```
+        * 返回 : 本身,用于链式调用;
+* 分组
+    * `DBlite::groupBy( string ...$colums )`
+        * ...$colums : 分组的列,个数不限定
+        * for example : 
+        ```php
+        // 默认的select方法会将所有列加上``符号导致mysql函数无法使用,使用DBlite::raw()方法可以返回未处理的列字段用于某些原生写法需要
+        DBlite::table('table_name')->select(DBlite::raw('count(foo) as foo,foo2'))->groupBy('foo','foo2')->get();
+        ```
+        * 返回 : 本身,用于链式调用;
+* 排序
+    * `DBlite::orderBy( string $key , string $order)`
+        * $key : 列名
+        * order : 排序方式`asc` 或者 `desc`
+        * for example : 
+        ```php
+        DBlite::table('table_name')->orderBy('id','desc')->get();
+        ```
+* 联表 
+    * `DBlite::join(string $table , $columnOne , [,string $operator = null [, string $columnTwo = null [, string $link]]])`
+        * table : 联表表名
+        $columnOne : 混合类型, 可以 单独填写 左表列名或者包含左右列名的数组(默认operator为=),
+        $operator : 符号或者右表列名 (默认为 =)
+        $columnTwo : 右表列名
+        $link : 可选,连接类型
+    * `DBlite::leftjoin(string $table , $columnOne , [,string $operator = null [, string $columnTwo = null]])`
+        * 左表联接,参数同上
+    * `DBlite::rightjoin(string $table , $columnOne , [,string $operator = null [, string $columnTwo = null]])`
+        * 右表联接,参数同上
+    * `DBlite::innerjoin(string $table , $columnOne , [,string $operator = null [, string $columnTwo = null]])`
+        * 内联接,参数同上
+    * for example : 
+        ```php
+        // left join table2 on t2.table1_id = t1.id
+        DBlite::table('table1 as t1')->leftjoin('table2 as t2','t2.table1_id','tb1.id')->get();
+        // left join table2 on t2.table1_id = t1.id
+        DBlite::table('table1 as t1')->leftjoin('table2 as t2',['t2.table1_id','tb1.id'])->get();
+        // left join table2 on t2.table1_id > t1.id
+        DBlite::table('table1 as t1')->leftjoin('table2 as t2','t2.table1_id','>','tb1.id')->get();
+        ```
 <!-- url地址 -->
 [homepage]: https://github.com/chengf28/dblite
 [issues]: https://github.com/chengf28/DBlite/issues
