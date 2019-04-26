@@ -2,7 +2,7 @@
 封装一个简单的仿laravel DB操作类,仅支持<font color="red">MySql</font>数据库(Only Support MySql databases);
 
 ## [BUG反馈及建议][issues]
-Github Issues: <https://github.com/chengf28/DBlite/issues>
+Github Issues: <https://github.com/chengf28/dblite/issues>
 ## 添加 Add
 * composer:
 
@@ -105,7 +105,7 @@ $config = [
 ```
 <font color="red">目前不支持多个从库,后续版本添加</font>
 
-## 方法
+## 方法 Methods
 * 插入 
     * `DBlite::insert( array $insert )*` 
         * $insert : 需要添加的数据,以键值对形式 `['foo'=>'test']`; 需要插入多个,则使用 二维嵌套数组插入,请注意保持每个子数组都有相同的 **键名**
