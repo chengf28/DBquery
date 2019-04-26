@@ -5,9 +5,9 @@
       * public __construct(\PDO $pdo)
          * 说明: 暂无
          * 参数:
-            参数名|类型|说明
-            -|-|-
-            $pdo|\PDO|
+              参数名|类型|说明
+              -|-|-
+              $pdo|\PDO|
          * 返回:void
       * public setWritePdo(\PDO $pdo)
          * 说明: 暂无
