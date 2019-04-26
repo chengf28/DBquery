@@ -5,6 +5,7 @@
       * public __construct(\PDO $pdo)
          * 说明: 暂无
          * 参数:
+         
               参数名|类型|说明
               -|-|-
               $pdo|\PDO|
