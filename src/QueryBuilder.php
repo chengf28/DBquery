@@ -423,6 +423,18 @@ class QueryBuilder
         return $this;
     }
 
+    #-----------------------------
+    # 聚合类
+    #-----------------------------
+
+    public function count( string $column )
+    {
+        return $this->select(function() use ($column)
+        {
+            return "count({$this->disposeCommon($column)})";
+        })->first();
+    }
+
     /**
      * 执行sql  
      * @param string $sql
@@ -1036,7 +1048,34 @@ class QueryBuilder
         {
             return $this->$method(...$args);
         }else{
-            throw new \Exception(__CLASS__."::{$method}() not found", 1);
+            // 丢出错误异常
+            throw new \ErrorException("The Method {$method} is not found in ".__CLASS__,9998,1,__FILE__,__LINE__);
         }
+    }
+    
+    #-----------------------------
+    # 数据库操作类语句
+    #-----------------------------
+
+    /**
+     * 获取表的创建语句
+     * @param string $table
+     * @return string
+     * God Bless the Code
+     */
+    public function showTable( string $table = null )
+    {
+        if (is_null($table)) 
+        {
+            $table = $this->getTable();
+        }
+        return $this->connect->fetchOneArr(
+            $this->run(
+                "show create table {$table}",
+                [],
+                $this->isWrite()
+            )
+        )["Create Table"];
+
     }
 }

@@ -77,7 +77,7 @@ class DBlite
 			{
 				if (!isset($input[$key])) 
 				{
-					self::throwError("缺少字段`{$key}`");
+					self::throwError("缺少字段`{$key}`",__LINE__);
 				}
 				$config[$key] = $input[$key];
 			}
@@ -94,7 +94,7 @@ class DBlite
 			}else{
 				if (empty($config[$key]))
 				{
-					self::throwError("字段`{$key}`值不能为空");
+					self::throwError("字段`{$key}`值不能为空",__LINE__);
 				}
 				$ret[$key] = $config[$key];
 			}
@@ -148,9 +148,9 @@ class DBlite
 	 * @return void
 	 * God Bless the Code
 	 */
-	public static function throwError( $message = '' )
+	public static function throwError( $message = '',$line = __LINE__ )
 	{
-		throw new \Exception($message, 1);
+		throw new \ErrorException($message,9999,1,__FILE__,$line);
 		return;
 	}
 
@@ -203,7 +203,13 @@ class DBlite
 	public static function __callStatic( $method , $args )
 	{
 		// 框架化,可在此处使用容器注入依赖,插件使用,固定写死底层;
-		return (new Query(self::$pdo))->$method(...$args);
+		try{
+			return (new Query(self::$pdo))->$method(...$args);
+		}catch(\Throwable $ex)
+		{
+			// 异常显示
+			die($ex->getTraceAsString());
+		}
 	}
 
 	/**
