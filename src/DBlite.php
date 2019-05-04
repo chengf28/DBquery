@@ -13,7 +13,7 @@ class DBlite
 		'user'   => false,
 		'pswd'   => false,
 	];
-	
+
 	protected static $pdo;
 
 	protected static $query;
@@ -204,7 +204,12 @@ class DBlite
 	{
 		// 框架化,可在此处使用容器注入依赖,插件使用,固定写死底层;
 		try{
-			return (new Query(self::$pdo))->$method(...$args);
+			if(method_exists(Query::class,$method))
+			{
+                return (new Query(self::$pdo))->$method(...$args);
+			}else{
+				self::throwError("Can't not found the method {$method} in {Query::class}",__LINE__);
+			}
 		}catch(\Throwable $ex)
 		{
 			// 异常显示
