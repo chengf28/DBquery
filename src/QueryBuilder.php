@@ -427,6 +427,12 @@ class QueryBuilder
     # 聚合类
     #-----------------------------
 
+    /**
+     * count聚合函数
+     * @param string $column
+     * @return array
+     * God Bless the Code
+     */
     public function count( string $column )
     {
         return $this->select(function() use ($column)
@@ -435,6 +441,40 @@ class QueryBuilder
         })->first();
     }
 
+    /**
+     * max聚合函数
+     * @param string $column
+     * @return array
+     * God Bless the Code
+     */
+    public function max( string $column )
+    {
+        return $this->select(function() use ($column)
+        {
+            return "max({$this->disposeCommon($column)})";
+        })->first();
+    }
+
+
+    public function sum( string $column )
+    {
+        return $this->select(function() use ($column)
+        {
+            return "sum({$this->disposeCommon($column)})";
+        })->first();
+    }
+
+    public function avg( string $column )
+    {
+        return $this->select(function() use ($column)
+        {
+            return "avg({$this->disposeCommon($column)})";
+        })->first();
+    }
+
+    #-----------------------------
+    # 执行
+    #-----------------------------
     /**
      * 执行sql  
      * @param string $sql
@@ -1069,6 +1109,7 @@ class QueryBuilder
         {
             $table = $this->getTable();
         }
+        // 返回表信息
         return $this->connect->fetchOneArr(
             $this->run(
                 "show create table {$table}",
@@ -1076,6 +1117,6 @@ class QueryBuilder
                 $this->isWrite()
             )
         )["Create Table"];
-
     }
+
 }
