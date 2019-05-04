@@ -3,6 +3,8 @@ namespace DBlite;
 use DBlite\Connect;
 use DBlite\QueryBuilder as Query;
 use \PDO;
+use DBlite\QueryContainer;
+
 class DBlite
 {
 	const needKeys = 
@@ -225,9 +227,6 @@ class DBlite
 	 */
 	public static function raw( string $string )
 	{
-		return function() use ( $string )
-		{
-			return $string;
-		};
+		return new QueryContainer($string);
 	}
 }

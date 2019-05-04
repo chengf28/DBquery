@@ -12,6 +12,25 @@ class QueryContainer implements Iterator,ArrayAccess
 {
     private $items = [];
 
+    public function __construct($value , $key = null)
+    {
+        if ( is_null($key) ) 
+        {
+            $this->items[] = $value;
+        }else{
+            $this->items[$key] = $value;
+        }
+    }
+
+    public function __get($key)
+    {
+        return $this->offsetGet($key);
+    }
+
+    public function __set($key,$value) {
+        $this->items[$key] = $value;
+    }
+
     public function current()
     {
         return current($this->items);
@@ -52,7 +71,12 @@ class QueryContainer implements Iterator,ArrayAccess
 
     public function offsetSet($offset, $value)
     {
-        $this->items[$offset] = $value;
+        if (!is_null($offset))
+        {
+            $this->items[$offset] = $value;
+        }else{
+            $this->items[] = $value;
+        }
     }
 
     public function offsetUnset($offset)
