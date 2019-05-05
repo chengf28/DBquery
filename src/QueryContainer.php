@@ -1,14 +1,13 @@
 <?php
 namespace DBlite;
 use \ArrayAccess;
-use \Iterator;
 /**
  * 特别字段的容器
  * @author chengf28 <chengf_28@163.com>
  * @version 1.0.0
  * God Bless the Code
  */
-class QueryContainer implements Iterator,ArrayAccess
+class QueryContainer implements ArrayAccess
 {
     private $items = [];
 
@@ -29,34 +28,6 @@ class QueryContainer implements Iterator,ArrayAccess
 
     public function __set($key,$value) {
         $this->items[$key] = $value;
-    }
-
-    public function current()
-    {
-        return current($this->items);
-    }
-
-    public function next()
-    {
-        return next($this->items);
-    }
-
-    public function key()
-    {
-        return key($this->items);
-    }
-
-    public function valid()
-    {
-        $bool = next($this->items) == null ? false : true;
-        // 指针指回
-        prev($this->items);
-        return $bool;
-    }
-    
-    public function rewind()
-    {
-        return reset($this->items);
     }
 
     public function offsetExists($offset)
