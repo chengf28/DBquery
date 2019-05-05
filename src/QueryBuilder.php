@@ -1,6 +1,7 @@
 <?php
 namespace DBlite;
 use DBlite\Connect;
+use DBlite\QueryStr;
 /**
  * 语句构建
  * @author chengf28 <chengf_28@163.com>
@@ -61,6 +62,12 @@ class QueryBuilder
     protected $useWrite;
     
     /**
+     * 是否为debug模式
+     * @var bool
+     * God Bless the Code
+     */
+    protected $debug = false;
+    /**
      * 构造函数,依赖注入PDO底层
      * @param \DBlite\Connect $connect
      * God Bless the Code
@@ -115,9 +122,13 @@ class QueryBuilder
      */
     public function insert( array $insert )
     {
-        $sth = $this->insertCommon($insert, $this->isWrite( true ) );
+        $PDOStatement = $this->insertCommon($insert, $this->isWrite( true ) );
+        if(is_string($PDOStatement))
+        {
+            return $PDOStatement;
+        }
         // 返回受影响的行数
-        return $sth->rowCount();
+        return $PDOStatement->rowCount();
     }
 
     /**
@@ -127,7 +138,10 @@ class QueryBuilder
      */
     public function insertGetId( array $insert )
     {
-        $this->insertCommon($insert,$this->isWrite( true ));
+        if(is_string($sql = $this->insertCommon($insert,$this->isWrite( true ))))
+        {
+            return $sql;
+        }
         $id = $this->connect->getLastId(true);
         if ( ($count = count($insert)) > 1 )
         {
@@ -177,11 +191,16 @@ class QueryBuilder
         {
             $this->where('id',$id);
         }
-        return $this->run(
+        $PDOStatement = $this->run(
             $this->completeDelete($this->getWheres()),
             $this->getBinds(),
             $this->isWrite(true)
-        )->rowCount();
+        );
+        if (is_string($PDOStatement)) 
+        {
+            return $PDOStatement;
+        }
+        return $PDOStatement->rowCount();
     }
     #-----------------------------
     # 更新
@@ -199,12 +218,16 @@ class QueryBuilder
             return 0;
         }
         ksort($update);
-
-        return $this->run(
+        $PDOStatement = $this->run(
             $this->completeUpdate($update,$this->getWheres()),
             $this->megreValues($this->getBinds(),array_values($update)),
             $this->isWrite(true)
-        )->rowCount();
+        );
+        if (is_string($PDOStatement))
+        {
+            return $PDOStatement;     
+        }
+        return $PDOStatement->rowCount();
     }
 
     #-----------------------------
@@ -283,13 +306,18 @@ class QueryBuilder
         ];
 
         $method = isset($all[$type]) ? $all[$type] : $all[1];
-
-        return $this->connect->{$method}(
-            $this->run(
+        $PDOStatement = $this->run(
                 $this->completeSelect($this->getColums(),$this->getWheres(),$this->query),
                 $this->megreValues($this->getBinds(),[]),
                 $this->isWrite()
-            )
+        );
+
+        if (is_string($PDOStatement))
+        {
+            return $PDOStatement;     
+        }
+        return $this->connect->{$method}(
+            $PDOStatement
         );
     }
 
@@ -428,50 +456,63 @@ class QueryBuilder
     #-----------------------------
 
     /**
-     * count聚合函数
-     * @param string $column
+     * 统计
+     * @param mixed $column
      * @return array
      * God Bless the Code
      */
-    public function count( string $column )
+    public function count( $column )
     {
-        return $this->select(function() use ($column)
-        {
-            return "count({$this->disposeCommon($column)})";
-        })->first();
+        return $this->aggregation(__FUNCTION__,$column);
     }
 
     /**
-     * max聚合函数
+     * 求字段最大值
      * @param string $column
      * @return array
      * God Bless the Code
      */
     public function max( string $column )
     {
-        return $this->select(function() use ($column)
-        {
-            return "max({$this->disposeCommon($column)})";
-        })->first();
+        return $this->aggregation(__FUNCTION__,$column);
     }
 
 
+    /**
+     * 求总值
+     * @param string $column
+     * @return array
+     * God Bless the Code
+     */
     public function sum( string $column )
     {
-        return $this->select(function() use ($column)
-        {
-            return "sum({$this->disposeCommon($column)})";
-        })->first();
+        return $this->aggregation(__FUNCTION__,$column);
     }
 
+    /**
+     * 求平均值
+     * @param string $column
+     * @return array
+     * God Bless the Code
+     */
     public function avg( string $column )
     {
-        return $this->select(function() use ($column)
-        {
-            return "avg({$this->disposeCommon($column)})";
-        })->first();
+        return $this->aggregation(__FUNCTION__,$column);
     }
 
+    /**
+     * 聚合统一处理
+     * @param string $fucname
+     * @param string $column
+     * @return array
+     * God Bless the Code
+     */
+    protected function aggregation(string $fucname,$column)
+    {
+        return $this->select(
+            new QueryStr( $fucname.'('.(is_int($column) ? $column : $this->disposeCommon($column)).')' )
+        )->first();
+    }
     #-----------------------------
     # 执行
     #-----------------------------
@@ -485,6 +526,11 @@ class QueryBuilder
      */
     private function run( string $sql , $values = [] , $useWrite = true )
     {
+        if($this->debug)
+        {
+            return $sql;
+        }
+
         return $this->connect->statementExecute(
             $this->connect->statementPrepare($sql,$useWrite),
             $values            
@@ -533,7 +579,7 @@ class QueryBuilder
     }
 
     /**
-     * 处理` whee key between (?,?)`
+     * 处理` where key between (?,?)`
      * @param string $columns
      * @param array $values
      * @param string $link
@@ -994,9 +1040,10 @@ class QueryBuilder
                 return $this->disposeCommon($value);
             },$key);
         }
-        if ( $key instanceof \Closure ) 
+        
+        if ($key instanceof \DBlite\QueryStr ) 
         {
-            return call_user_func($key,$this);
+            return $key->get();
         }
  
         if ($key == '*')
@@ -1091,6 +1138,12 @@ class QueryBuilder
             // 丢出错误异常
             throw new \ErrorException("The Method {$method} is not found in ".__CLASS__,9998,1,__FILE__,__LINE__);
         }
+    }
+
+    public function toSql(bool $is_debug)
+    {
+        $this->debug = $is_debug;
+        return $this;
     }
     
     #-----------------------------

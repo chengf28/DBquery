@@ -3,7 +3,7 @@ namespace DBlite;
 use DBlite\Connect;
 use DBlite\QueryBuilder as Query;
 use \PDO;
-use DBlite\QueryContainer;
+use DBlite\QueryStr;
 
 class DBlite
 {
@@ -227,6 +227,6 @@ class DBlite
 	 */
 	public static function raw( string $string )
 	{
-		return new QueryContainer($string);
+		return new QueryStr($string);
 	}
 }
