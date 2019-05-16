@@ -1,7 +1,7 @@
 <?php
-namespace DBlite;
-use DBlite\Connect;
-use DBlite\QueryStr;
+namespace DBquery;
+use DBquery\Connect;
+use DBquery\QueryStr;
 /**
  * 语句构建
  * @author chengf28 <chengf_28@163.com>
@@ -49,7 +49,7 @@ class QueryBuilder
 
     /**
      * 数据库操作层容器
-     * @var \DBlite\Connect::class
+     * @var \DBquery\Connect::class
      * God Bless the Code
      */
     protected $connect;
@@ -69,7 +69,7 @@ class QueryBuilder
     protected $debug = false;
     /**
      * 构造函数,依赖注入PDO底层
-     * @param \DBlite\Connect $connect
+     * @param \DBquery\Connect $connect
      * God Bless the Code
      */
     public function __construct( Connect $connect )
@@ -80,7 +80,7 @@ class QueryBuilder
     /**
      * 设置表名
      * @param string $table
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function table( string $table)
@@ -91,7 +91,7 @@ class QueryBuilder
 
     /**
      * 使用写库
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function useWrite()
@@ -102,7 +102,7 @@ class QueryBuilder
     
     /**
      * 使用读库
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function useRead()
@@ -257,7 +257,7 @@ class QueryBuilder
     /**
      * 添加筛选字段
      * @param array $columns
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function select( $columns = ['*'] )
@@ -330,7 +330,7 @@ class QueryBuilder
      * @param mixed  $columnOne
      * @param string $operator
      * @param string $columnTwo
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function leftjoin( string $table , $columnOne , string $operator = null , string $columnTwo = null )
@@ -344,7 +344,7 @@ class QueryBuilder
      * @param mixed  $columnOne
      * @param string $operator
      * @param string $columnTwo
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function rigthjoin(string $table,$columnOne, string $operator = null, string $columnTwo = null)
@@ -358,7 +358,7 @@ class QueryBuilder
      * @param mixed  $columnOne
      * @param string $operator
      * @param string $columnTwo
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function innerjoin(string $table, $columnOne, string $operator = null, string $columnTwo = null)
@@ -373,7 +373,7 @@ class QueryBuilder
      * @param string $operator
      * @param string $columnTwo
      * @param string $link
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function join( string $table , $columnOne , string $operator = null , string $columnTwo = null , string $link = 'join')
@@ -408,7 +408,7 @@ class QueryBuilder
      * 添加limit字段
      * @param int $start
      * @param int $end
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function limit( int $start = 0 , int $end = null )
@@ -431,7 +431,7 @@ class QueryBuilder
      * 处理order by 
      * @param string $key
      * @param string $order
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function orderBy( string $key , string $order )
@@ -442,7 +442,7 @@ class QueryBuilder
 
     /**
      * 处理 group by 
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function groupBy()
@@ -570,7 +570,7 @@ class QueryBuilder
      * @param mixed $columns
      * @param mixed $operator
      * @param mixed $values
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function orWhere( $columns , $operator = null, $values = null )
@@ -584,7 +584,7 @@ class QueryBuilder
      * @param array $values
      * @param string $link
      * @param bool $boolean
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function whereBetween( string $columns , array $values , string $link = 'and' , bool $boolean = true )
@@ -598,7 +598,7 @@ class QueryBuilder
      * 处理 `where key not between (x,x)`
      * @param string $columns
      * @param array $values
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function whereNotBetween( string $columns , array $values )
@@ -610,7 +610,7 @@ class QueryBuilder
      * 处理 `where or between (x,x)`
      * @param string $columns
      * @param array $values
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function orWhereBetween( string $columns , array $values )
@@ -622,7 +622,7 @@ class QueryBuilder
      * 处理 ` where or key not between (x,x)`
      * @param string $columns
      * @param array $values
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function orWhereNotBetween( string $columns , array $values)
@@ -636,7 +636,7 @@ class QueryBuilder
      * @param array $values
      * @param string $link
      * @param bool $boolean
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function whereIn( string $columns , array $values , string $link = 'and' , bool $boolean = true )
@@ -650,7 +650,7 @@ class QueryBuilder
      * 处理 ` where key not in (x,x)` 语句
      * @param string $columns
      * @param array $values
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function whereNotIn( string $columns , array $values )
@@ -662,7 +662,7 @@ class QueryBuilder
      * 处理 ` where or in ` 语句
      * @param string $columns
      * @param array $values
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function orWhereIn( string $columns , array $values )
@@ -674,7 +674,7 @@ class QueryBuilder
      * 处理 ` where or not in ` 语句
      * @param string $columns
      * @param array $values
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     public function orWhereNotIn( string $columns , array $values )
@@ -689,7 +689,7 @@ class QueryBuilder
      * @param string $operator
      * @param mixed $values
      * @param string $link
-     * @return \DBlite\QueryBuilder::class
+     * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
     protected function whereCommon( string $type , $columns , $operator = null , $values = null , string $link = 'and' )
@@ -1041,7 +1041,7 @@ class QueryBuilder
             },$key);
         }
         
-        if ($key instanceof \DBlite\QueryStr ) 
+        if ($key instanceof \DBquery\QueryStr ) 
         {
             return $key->get();
         }

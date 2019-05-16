@@ -1,11 +1,11 @@
 <?php 
-namespace DBlite;
-use DBlite\Connect;
-use DBlite\QueryBuilder as Query;
+namespace DBquery;
+use DBquery\Connect;
+use DBquery\QueryBuilder as Query;
 use \PDO;
-use DBlite\QueryStr;
+use DBquery\QueryStr;
 
-class DBlite
+class DBquery
 {
 	const needKeys = 
 	[
@@ -25,7 +25,7 @@ class DBlite
 	 * @author: chengf28
 	 * God Bless the Code
 	 * @param  array  $input_config 传入的配置文件
-	 * @return \DBlite\Connect::class
+	 * @return \DBquery\Connect::class
 	 */
 	public static function config( array $input_config )
 	{
@@ -162,7 +162,7 @@ class DBlite
 	/**
 	 * 创建PDO类
 	 * @param array $config
-	 * @return \DBlite\Connect::class
+	 * @return \DBquery\Connect::class
 	 */
 	public static function createPdo( array $config )
 	{

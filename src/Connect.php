@@ -1,5 +1,5 @@
 <?php
-namespace DBlite;
+namespace DBquery;
 use \PDO;
 /*
 |---------------------------------------

@@ -1,5 +1,5 @@
 {
-    "name": "chengf28/dblite",
+    "name": "chengf28/dbquery",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -13,7 +13,7 @@
     },
     "autoload": {
         "psr-4": {
-            "DBlite\\": "src/"
+            "DBquery\\": "src/"
         }
     }
 }

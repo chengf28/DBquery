@@ -1,5 +1,5 @@
 <?php
-namespace DBlite;
+namespace DBquery;
 /**
  * 不需要处理的字段容器
  * @author chengf28 <chengf_28@163.com>
