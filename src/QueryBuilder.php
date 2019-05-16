@@ -10,7 +10,7 @@ use DBquery\QueryStr;
 class QueryBuilder
 {
     protected $operator = [
-		'=','>','<>','<','like','!=','<=','>=','+','-','/','*','%','IS NULL','IS NOT NULL','LEAST','GREATEST','BETWEEN','IN','NOT BETWEEN','NOT IN','REGEXP'
+		'=','>','<>','<','like','!=','<=','>=','+','-','/','*','%','IS NULL','IS NOT NULL','LEAST','GREATEST','BETWEEN','IN','NOT BETWEEN','NOT IN','REGEXP','IS','IS NOT'
     ];
 
     /**
@@ -553,7 +553,6 @@ class QueryBuilder
         // {
             
         // }
-        
         // 只有2个参数
         if ( is_null($values) && !$this->isOperator($operator)  && func_num_args() ==2 ) 
         {
@@ -683,6 +682,50 @@ class QueryBuilder
     }
 
     /**
+     * 处理 where `columns` is null 语句
+     * @param string $columns
+     * @return \DBquery\QueryBuilder::class
+     * God Bless the Code
+     */
+    public function whereNull(string $columns)
+    {
+        return $this->where($columns,'is');
+    }
+
+    /**
+     * 处理 or where `columns` is null 语句
+     * @param string $columns
+     * @return \DBquery\QueryBuilder::class
+     * God Bless the Code
+     */
+    public function orWhereNull(string $columns)
+    {
+        return $this->where($columns,'is',null,'or');
+    }
+
+    /**
+     * 处理 where `columns` is not null 语句
+     * @param string $columns
+     * @return \DBquery\QueryBuilder::class
+     * God Bless the Code
+     */
+    public function whereNotNull(string $columns)
+    {
+        return $this->where($columns,'is not');
+    }
+
+    /**
+     * 处理 where `columns` is not null 语句
+     * @param string $columns
+     * @return \DBquery\QueryBuilder::class
+     * God Bless the Code
+     */
+    public function orWhereNotNull(string $columns)
+    {
+        return $this->where($columns,'is not',null,'or');
+    }
+
+    /**
      * where 公告处理部分
      * @param string $type
      * @param mixed $columns
@@ -694,6 +737,11 @@ class QueryBuilder
      */
     protected function whereCommon( string $type , $columns , $operator = null , $values = null , string $link = 'and' )
     {
+        // 不在允许符号范围
+        if ( !$this->isOperator($operator) ) 
+        {
+            throw new \ErrorException("Invaild operator in ".__CLASS__,9997,1,__FILE__,__LINE__);
+        }
         $this->wheres[] = compact('type','columns','operator','values','link');
         $this->setBinds($values);
         return $this;
@@ -1140,7 +1188,13 @@ class QueryBuilder
         }
     }
 
-    public function toSql(bool $is_debug)
+    /**
+     * 获取到sql语句,用于调试
+     * @param bool $is_debug
+     * @return \DBquery\QueryBuilder::class
+     * God Bless the Code
+     */
+    public function toSql(bool $is_debug = false)
     {
         $this->debug = $is_debug;
         return $this;

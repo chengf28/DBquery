@@ -96,9 +96,12 @@ class Connect
 	 */
 	public function statementExecute(\PDOStatement $sth,array $values)
 	{
-		foreach ( $values as $key => $value ) 
+		foreach ( $values as $key => $value )
 		{
-			$sth->bindValue($key+1,$value,is_numeric($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+			$sth->bindValue(
+				$key+1,
+				$value,
+				is_numeric($value) ? PDO::PARAM_INT : (is_null($value)?:PDO::PARAM_STR));
 		}
 		$sth->execute();
 		// 判断是否存在语法错误
