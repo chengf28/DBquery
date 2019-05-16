@@ -3,16 +3,16 @@
 
 ## [BUG反馈及建议][issues]
 Github Issues: <https://github.com/chengf28/DBquery/issues>
-## 添加 Add
+## 添加 Install
 * composer:
 
-直接在项目根目录中执行`composer require chengf28/DBquery` , 即可加载该包到项目vender/chengf28目录中(如果目录中没有composer.json 会自动生成)
+直接在项目根目录中执行`composer require chengf28/dbquery` , 即可加载该包到项目vender/chengf28目录中(如果目录中没有composer.json 会自动生成)
 
 或者在项目中的composer.json添加
 ```json
 {
     "require": {
-        "chengf28/DBquery": "^0.1.0"
+        "chengf28/dbquery": "^0.1.0"
     }
 }
 ```
@@ -24,7 +24,7 @@ git clone https://github.com/chengf28/DBquery.git
 ```
 
 
-## 开始 Start
+## 用法 Usage
 ```php
 use DBquery\DBquery;
 $config = [

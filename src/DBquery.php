@@ -20,6 +20,8 @@ class DBquery
 
 	protected static $query;
 
+	protected static $config = [];
+
 	/**
 	 * 载入配置数组
 	 * @author: chengf28
@@ -34,7 +36,18 @@ class DBquery
 		$output_config = self::disposeConfig( $input_config );
 		// 添加默认内容
 		$output_config['dbtype'] = isset($input_config['dbtype']) ? strtolower($input_config['dbtype']) : 'Mysql';
-		self::$pdo = self::createPdo( $output_config );
+		self::$pdo = self::createPdo( self::$config = $output_config );
+	}
+
+	public static function getConfig()
+	{
+		if (empty(self::$config)) 
+		{
+			self::$config = self::needKeys;
+			self::$config['pswd'] = 'root';
+			self::$config['user'] = 'root';
+		}
+		return self::$config;
 	}
 
 	/**
@@ -72,7 +85,7 @@ class DBquery
 			$config = $input;
 		}
 		$ret           = [];
-		$ret['string'] = '';
+		$ret['dsn'] = '';
 		foreach (self::needKeys as $key => $isString) 
 		{
 			if ( !isset($config[$key])  )
@@ -86,12 +99,12 @@ class DBquery
 			
 			if ($isString != false) 
 			{
-				$ret['string'] .= "{$key}=";
+				$ret['dsn'] .= "{$key}=";
 				if (empty($config[$key])) 
 				{
-					$ret['string'] .= "{$isString};";
+					$ret['dsn'] .= "{$isString};";
 				}else{
-					$ret['string'] .= "{$config[$key]};";
+					$ret['dsn'] .= "{$config[$key]};";
 				}
 			}else{
 				if (empty($config[$key]))
@@ -170,7 +183,7 @@ class DBquery
 		{
 			$pdo = new Connect(
 				$readPdo = new PDO( 
-						$config['dbtype'].":".$config['read']['string'],
+						$config['dbtype'].":".$config['read']['dsn'],
 						$config['read']['user'],
 						$config['read']['pswd'],[]
 					)
@@ -180,7 +193,7 @@ class DBquery
 			if ( self::hasWrite($config) ) 
 			{
 				$pdo->setWritePdo(new PDO(
-						$config['dbtype'].":".$config['write']['string'],
+						$config['dbtype'].":".$config['write']['dsn'],
 						$config['write']['user'],
 						$config['write']['pswd'],[]
 					)
