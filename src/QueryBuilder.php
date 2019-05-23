@@ -583,7 +583,7 @@ class QueryBuilder
          */
         if ( $columns instanceof \Closure ) 
         {
-            return $this->disposeClosure($columns);
+            return $this->whereClosure($columns,$link);
         }
 
         // 只有2个参数
@@ -758,6 +758,14 @@ class QueryBuilder
         return $this->where($columns,'is not',null,'or');
     }
 
+    private function whereClosure(\Closure $closure,$link)
+    {
+        
+        $query = new QueryBuilder($this->getConnect());
+        call_user_func($closure,$query);
+        return $this->whereCommon('Closure',$query->getWheres(),'=',$query->getBinds(),$link);
+    }
+
     /**
      * where 公告处理部分
      * @param string $type
@@ -891,6 +899,11 @@ class QueryBuilder
      */
     private function completeWhere( array $wheres )
     {
+        return 'where'.$this->completeWhereDispatch($wheres);
+    }
+    
+    private function completeWhereDispatch(array $wheres)
+    {
         if ( empty($wheres) ) 
         {
             return '';
@@ -902,9 +915,8 @@ class QueryBuilder
         {
             return $carry .= $item;
         });
-        return 'where'.preg_replace('/and|or/','',$str,1);
+        return preg_replace('/and|or/','',$str,1);
     }
-    
     /**
      * 基础类型的where Sql 获取
      * @param array $where
@@ -936,6 +948,11 @@ class QueryBuilder
     private function completeWhereIn( array $where )
     {
         return " {$this->disposeCommon($where['columns'])} {$where['operator']} ({$this->disposePlaceholder($where['values'])}) ";
+    }
+
+    private function completeWhereClosure(array $wheres)
+    {
+        return ' ('.$this->completeWhereDispatch($wheres['columns']).')';
     }
 
 
@@ -1152,14 +1169,8 @@ class QueryBuilder
         }
         return '?';
     }
-
-    private function disposeClosure(\Closure $closure)
-    {
-        // 达不到效果
-        $closure($this);
-        // TODO
-        return $this;
-    }
+    
+    
 
     /**
      * 获取到wheres参数
@@ -1234,13 +1245,23 @@ class QueryBuilder
     /**
      * 获取到sql语句,用于调试
      * @param bool $is_debug
-     * @return \DBquery\QueryBuilder::class
+     * @return \DBquery\QueryBuilder
      * God Bless the Code
      */
     public function toSql(bool $is_debug = false)
     {
         $this->debug = $is_debug;
         return $this;
+    }
+
+    /**
+     * 获取到connect类
+     * @return \DBquery\Connect
+     * God Bless the Code
+     */
+    public function getConnect()
+    {
+        return $this->connect;
     }
     
     #-----------------------------
