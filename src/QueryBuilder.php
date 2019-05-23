@@ -67,6 +67,14 @@ class QueryBuilder
      * God Bless the Code
      */
     protected $debug = false;
+
+    /**
+     * 通用前缀
+     * @var string
+     * God Bless the Code
+     */
+    protected $prefix;
+
     /**
      * 构造函数,依赖注入PDO底层
      * @param \DBquery\Connect $connect
@@ -89,6 +97,27 @@ class QueryBuilder
         return $this;
     }
 
+    /**
+     * 设置表前缀
+     * @param string $prefix
+     * @return \DBquery\QueryBuilder::class
+     * God Bless the Code
+     */
+    public function setPrefix(string $prefix)
+    {
+        !empty($prefix) && $this->prefix = $prefix;
+        return $this;
+    }
+
+    /**
+     * 获取到表前缀
+     * @return string
+     * God Bless the Code
+     */
+    public function getPrefix()
+    {
+        return $this->prefix;
+    }
     /**
      * 使用写库
      * @return \DBquery\QueryBuilder::class
@@ -539,7 +568,7 @@ class QueryBuilder
     #-----------------------------
     # where条件
     #-----------------------------
-    public function where( $columns , $operator = null , $values = null ,  string $link = 'and' )
+    public function where( $columns , $operator = null , $values = '' ,  string $link = 'and' )
     {
         /**
          * 如果传入的是一个数组,则交个数组处理函数处理
@@ -549,12 +578,16 @@ class QueryBuilder
             return $this->arrayColumn( $columns , $link );
         }
 
-        // if ( $columns instanceof \Closure ) 
-        // {
-            
-        // }
+        /**
+         * 如果传入的是一个匿名函数
+         */
+        if ( $columns instanceof \Closure ) 
+        {
+            return $this->disposeClosure($columns);
+        }
+
         // 只有2个参数
-        if ( is_null($values) && !$this->isOperator($operator)  && func_num_args() ==2 ) 
+        if ( empty($values) && !$this->isOperator($operator) )
         {
             $values   = $operator;
             // 默认操作符为 = 号
@@ -572,7 +605,7 @@ class QueryBuilder
      * @return \DBquery\QueryBuilder::class
      * God Bless the Code
      */
-    public function orWhere( $columns , $operator = null, $values = null )
+    public function orWhere( $columns , $operator = null, $values = '' )
     {
         return $this->where($columns,$operator,$values,'or');
     }
@@ -641,7 +674,7 @@ class QueryBuilder
     public function whereIn( string $columns , array $values , string $link = 'and' , bool $boolean = true )
     {
         $operator = $boolean ? 'in' : 'not in';
-        $type = 'in';
+        $type     = 'in';
         return $this->whereCommon( $type , $columns , $operator , $values , $link );
     }
     
@@ -689,7 +722,7 @@ class QueryBuilder
      */
     public function whereNull(string $columns)
     {
-        return $this->where($columns,'is');
+        return $this->where($columns,'is',null);
     }
 
     /**
@@ -711,7 +744,7 @@ class QueryBuilder
      */
     public function whereNotNull(string $columns)
     {
-        return $this->where($columns,'is not');
+        return $this->where($columns,'is not',null);
     }
 
     /**
@@ -1067,8 +1100,8 @@ class QueryBuilder
     {
         if (strpos($string , ' as ')) 
         {
-            $alias = explode(' as ',$string);
-            return $this->disposeCommon($alias[0])." as ".$this->disposeCommon($alias[1]);
+            list($table_name,$alias_name) = explode(' as ',$string);
+            return $this->disposeCommon($table_name)." as ".$this->disposeCommon($alias_name);
         }
         return $this->disposeCommon($string);
     }
@@ -1120,6 +1153,14 @@ class QueryBuilder
         return '?';
     }
 
+    private function disposeClosure(\Closure $closure)
+    {
+        // 达不到效果
+        $closure($this);
+        // TODO
+        return $this;
+    }
+
     /**
      * 获取到wheres参数
      * @return array
@@ -1137,7 +1178,9 @@ class QueryBuilder
      */
     public function getTable()
     {
-        return $this->table ? $this->disposeAlias($this->table) : '';
+        return $this->table ? $this->disposeAlias(
+            ($this->prefix ?:'').$this->table
+        ) : '';
     }
 
     /**

@@ -66,6 +66,7 @@ class DBquery
 		}else{
 			$ret['read'] = $ret['write'];
 		}
+		isset($config['prefix']) && $ret['prefix'] = $config['prefix'];
 		return $ret;
 	}
 
@@ -76,7 +77,7 @@ class DBquery
 	 * @return array
 	 * God Bless the Code
 	 */
-	protected static function parseConfig( array $input , $extendKey = null)
+	protected static function parseConfig( array $input , $extendKey = null )
 	{
 		if ( !is_null($extendKey)  && isset( $input[$extendKey] ) )
 		{
@@ -126,7 +127,7 @@ class DBquery
 	 */
 	protected static function hasRead( array $input )
 	{
-		return array_key_exists( "read", $input );
+		return array_key_exists("read", $input);
 	}
 
 	/**
@@ -192,7 +193,8 @@ class DBquery
 			// 如果读写分离,创造写库
 			if ( self::hasWrite($config) ) 
 			{
-				$pdo->setWritePdo(new PDO(
+				$pdo->setWritePdo(
+					new PDO(
 						$config['dbtype'].":".$config['write']['dsn'],
 						$config['write']['user'],
 						$config['write']['pswd'],[]
@@ -221,7 +223,7 @@ class DBquery
 		try{
 			if(method_exists(Query::class,$method))
 			{
-                return (new Query(self::$pdo))->$method(...$args);
+                return (new Query(self::$pdo))->setPrefix(self::getPrefix())->$method(...$args);
 			}else{
 				self::throwError("Can't not found the method {$method} in {Query::class}",__LINE__);
 			}
@@ -241,5 +243,15 @@ class DBquery
 	public static function raw( string $string )
 	{
 		return new QueryStr($string);
+	}
+
+	/**
+	 * 获取到表前缀
+	 * @return string
+	 * God Bless the Code
+	 */
+	private static function getPrefix()
+	{
+		return isset(self::$config['prefix']) ? self::$config['prefix'] : '';
 	}
 }
