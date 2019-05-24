@@ -4,7 +4,11 @@ use DBquery\Connect;
 use DBquery\QueryBuilder as Query;
 use \PDO;
 use DBquery\QueryStr;
-
+/**
+ * DBquery配置解析及统一入口
+ * @author chengf28 <chengf_28@163.com>
+ * God Bless the Code
+ */
 class DBquery
 {
 	const needKeys = 
