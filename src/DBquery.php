@@ -26,6 +26,8 @@ class DBquery
 
 	protected static $config = [];
 
+	protected static $select;
+
 	/**
 	 * 载入配置数组
 	 * @author: chengf28
@@ -35,12 +37,28 @@ class DBquery
 	 */
 	public static function config( array $input_config )
 	{
-		// 将数组键值转换成小写
-		$input_config  = self::changeKeyCase( $input_config );
-		$output_config = self::disposeConfig( $input_config );
-		// 添加默认内容
-		$output_config['dbtype'] = isset($input_config['dbtype']) ? strtolower($input_config['dbtype']) : 'Mysql';
-		self::$conn = self::createPdo( self::$config = $output_config );
+		$globals_config = [];
+		// 多个连接
+		if ( !isset($input_config['connects']) ) 
+		{
+			// 添加默认内容
+			$globals_config = [$input_config];
+		}else{
+			$globals_config = $input_config['connects'];
+		}
+
+		foreach ($globals_config as $key => $array_config)
+		{
+			// 将数组键值转换成小写
+			$array_config  = self::changeKeyCase( $array_config );
+			$config = self::disposeConfig( $array_config );
+			$config['dbtype'] = isset($array_config['dbtype']) ? strtolower($array_config['dbtype']) : 'Mysql';
+			self::$config[$key] = $config;
+		}
+		// 创建pdo;
+		self::$conn = self::createPdo(
+			is_null(self::getSelect()) ? current(self::$config): self::$config[self::$select]
+		);
 	}
 
 	/**
@@ -88,22 +106,27 @@ class DBquery
 	 */
 	protected static function parseConfig( array $input , $extendKey = null )
 	{
+		
 		if ( !is_null($extendKey)  && isset( $input[$extendKey] ) )
 		{
 			$config = self::changeKeyCase( $input[$extendKey] );
 		}else{
 			$config = $input;
 		}
-		$ret           = [];
+
+		$ret        = [];
 		$ret['dsn'] = '';
 		foreach (self::needKeys as $key => $isString) 
 		{
+			// 子类中不存在,则在父级(通用部分中)
 			if ( !isset($config[$key])  )
 			{
+				// 父级中也不存在,抛出参数异常
 				if (!isset($input[$key])) 
 				{
-					self::throwError("缺少字段`{$key}`",__LINE__);
+					throw new \InvalidArgumentException('缺少字段`{$key}`');
 				}
+				// 复制参数
 				$config[$key] = $input[$key];
 			}
 			
@@ -248,7 +271,8 @@ class DBquery
 	 */
 	private static function getPrefix()
 	{
-		return isset(self::$config['prefix']) ? self::$config['prefix'] : '';
+		$config = is_null(self::getSelect()) ? current(self::$config): self::$config[self::$select];
+		return isset($config['prefix']) ? $config['prefix'] : '';
 	}
 
 	/**
@@ -279,5 +303,23 @@ class DBquery
 	public static function commit()
 	{
 		self::$conn->commit();
+	}
+
+	public static function getSelect()
+	{
+		return self::$select;
+	}
+
+	public static function connect($connect)
+	{
+		if (!isset(self::$config[$connect]))
+		{
+			throw new \LogicException('Can\'t not found ' . $connect . ' in configs');
+		}
+		self::$select = $connect;
+		// 创建pdo;
+		self::$conn = self::createPdo(
+			self::$config[$connect]
+		);
 	}
 }
