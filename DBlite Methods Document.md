@@ -226,12 +226,11 @@ group by 子句
 ---
 ## DBquery::where( $columns [, $operator = null [, $values = '']])
 where子句 支持多种参数模式 
-当只有个一个参数时 支持`一维数组(包含键值对形式)`,`二维数组`,或者 `匿名函数` 
+当只有个一个参数时 支持`二维数组`,或者 `匿名函数` 
 ```php
    // select * from `user` where `id` = 2
    DBquery::table('user')->where('id',2)->get();
    DBquery::table('user')->where(['id',2])->get();
-   DBquery::table('user')->where(['id'=>2])->get(); // 该形式仅支持一维模式,且只有=号
    DBquery::table('user')->where([['id',2]])->get();
    // select * from `user` where ( `id` = 2)
    DBquery::table('user')->where(function($query){
@@ -348,4 +347,41 @@ where not between 子句 用法与whereNotBetween相同,仅在多个使用时使
 ```php
    // 最后返回的是sql语句,并不会真正的执行到
    DBquery::table('user')->select('id')->toSql(1)->get();
+```
+---
+## DBquery::beginTransaction()
+开始事务
+## DBquery::commit()
+事务提交
+## DBquery::rollback()
+事务回滚
+```php
+   // 事务开始
+   DBquery::beginTransaction();
+
+   $row = DBquery::table('user')->delete();
+   if($row > 0)
+   {
+      // 事务提交
+      DBquery::commit();
+   }else{
+      // 事务回滚
+      DBquery::rollback();
+   }
+```
+## DBquery::lockForUpdate()
+排它锁 **会隐式的调用write库**
+```php
+   // 共享锁
+   DBquery::beginTransaction();
+   DBquery::table('user')->where('id',2)->lockForUpdate()->get();
+   DBquery::commit();
+```
+## DBquery::lockShare()
+共享锁 **会隐式的调用write库**
+```php
+   // 共享锁
+   DBquery::beginTransaction();
+   DBquery::table('user')->where('id',2)->lockShare()->get();
+   DBquery::commit();
 ```

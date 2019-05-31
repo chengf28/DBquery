@@ -1,7 +1,8 @@
 <?php
 namespace DBquery;
-use DBquery\Connect;
+use DBquery\ConnectAbstract as Connect;
 use DBquery\QueryStr;
+
 /**
  * 语句构建
  * @author chengf28 <chengf_28@163.com>
@@ -51,7 +52,7 @@ class QueryBuilder
 
     /**
      * 数据库操作层容器
-     * @var \DBquery\Connect::class
+     * @var \DBquery\Connect
      * God Bless the Code
      */
     protected $connect;
@@ -76,6 +77,13 @@ class QueryBuilder
      * God Bless the Code
      */
     protected $prefix;
+
+    /**
+     * 是否锁表(查询时)
+     * @var bool
+     * God Bless the Code
+     */
+    protected $lock = false;
 
     /**
      * 构造函数,依赖注入PDO底层
@@ -153,13 +161,26 @@ class QueryBuilder
      */
     public function insert( array $insert )
     {
-        $PDOStatement = $this->insertCommon($insert, $this->isWrite( true ) );
-        if(is_string($PDOStatement))
+        // 如果是空数组则直接返回true
+        if ( empty($insert) || empty(current($insert)) ) 
         {
-            return $PDOStatement;
+            return true;
         }
-        // 返回受影响的行数
-        return $PDOStatement->rowCount();
+        /**
+         * 如果不是二维数组,则转换成为二维数组
+         */
+        count($insert) == count($insert,1) &&
+        $insert = [$insert];
+        
+        return $this->run(
+            $this->completeInsert($insert),
+            $this->disposeValueArrayDimension($insert),
+            $this->isWrite(true),
+            function($sth)
+            {
+                return $sth->rowCount();
+            }
+        );
     }
 
     /**
@@ -169,44 +190,19 @@ class QueryBuilder
      */
     public function insertGetId( array $insert )
     {
-        if(is_string($sql = $this->insertCommon($insert,$this->isWrite( true ))))
+        $count = $this->insert($insert);
+        if($this->debug)
         {
-            return $sql;
+            return $count;
         }
-        $id = $this->connect->getLastId(true);
-        if ( ($count = count($insert)) > 1 )
+        $id = $this->getConnect()->getPDO($this->isWrite(true))->lastInsertId();
+        if ( $count > 1 )
         {
             $id += $count-1;
         }
         return $id;
     }
-
-    /**
-     * insert公共功能
-     * @param array $insert
-     * @return \PDOStatement $sth;
-     */
-    protected function insertCommon( array $insert , $write  )
-    {
-        // 如果是空数组则直接返回true
-        if ( empty($insert) || empty(current($insert)) ) 
-        {
-            return true;
-        }
-        /**
-         * 如果不是二维数组,则转换成为二维数组
-         */
-        if ( count($insert) == count($insert,1)) 
-        {
-            $insert = [$insert];
-        }
-        $sth = $this->run(
-            $this->completeInsert($insert),
-            $this->disposeValueArrayDimension($insert),
-            $write
-        );
-        return $sth;
-    }
+    
     #-----------------------------
     # 删除
     #-----------------------------
@@ -222,16 +218,15 @@ class QueryBuilder
         {
             $this->where('id',$id);
         }
-        $PDOStatement = $this->run(
+        return $this->run(
             $this->completeDelete($this->getWheres(),$this->query),
             $this->getBinds(),
-            $this->isWrite(true)
+            $this->isWrite(true),
+            function($sth)
+            {
+                return $sth->rowCount();
+            }
         );
-        if (is_string($PDOStatement)) 
-        {
-            return $PDOStatement;
-        }
-        return $PDOStatement->rowCount();
     }
     #-----------------------------
     # 更新
@@ -246,19 +241,17 @@ class QueryBuilder
     {
         if ( empty($update) )
         {
-            return 0;
+            throw new \InvalidArgumentException("It's empty data to update");
         }
         ksort($update);
-        $PDOStatement = $this->run(
+        return $this->run(
             $this->completeUpdate($update,$this->getWheres()),
             $this->megreValues($this->getBinds(),array_values($update)),
-            $this->isWrite(true)
+            $this->isWrite(true),
+            function($sth){
+                return $sth->rowCount();
+            }
         );
-        if (is_string($PDOStatement))
-        {
-            return $PDOStatement;     
-        }
-        return $PDOStatement->rowCount();
     }
 
     #-----------------------------
@@ -320,36 +313,26 @@ class QueryBuilder
      */
     public function first()
     {
-        return $this->getCommon(3);
+        return is_array($row = $this->limit(1)->getCommon())?current($row):$row;
     }
 
     /**
      * 查询共用部分
-     * @return void
+     * @return array|string
      * God Bless the Code
      */
-    protected function getCommon( $type = 1 )
+    protected function getCommon()
     {
-        $all = [
-            '1'=>'fetchAllArr',
-            '2'=>'fetchAllObj',
-            '3'=>'fetchOneArr',
-            '4'=>'fetchOneObj'
-        ];
-
-        $method = isset($all[$type]) ? $all[$type] : $all[1];
-        $PDOStatement = $this->run(
-                $this->completeSelect($this->getColums(),$this->getWheres(),$this->query),
-                $this->megreValues($this->getBinds(),[]),
-                $this->isWrite()
-        );
-
-        if (is_string($PDOStatement))
-        {
-            return $PDOStatement;     
-        }
-        return $this->connect->{$method}(
-            $PDOStatement
+        return $this->run(
+                $this->completeSelect(
+                    $this->getColums(),$this->getWheres(),$this->query
+                ),
+                $this->getBinds(),
+                $this->isWrite(false),
+                function($sth)
+                {
+                    return $sth->fetchAll(\PDO::FETCH_ASSOC);
+                }
         );
     }
 
@@ -558,21 +541,27 @@ class QueryBuilder
      * @param string $sql
      * @param array $values
      * @param bool $useWrite
-     * @return \PDOStatement::class
+     * @return \PDOStatement
      * God Bless the Code
      */
-    private function run( string $sql , $values = [] , $useWrite = true )
+    private function run( string $sql , $values = [] , $useWrite = true , \Closure $callback)
     {
-        if($this->debug)
+        if ($this->debug) 
         {
             return $sql;
         }
-
-        return $this->connect->statementExecute(
-            $this->connect->statementPrepare($sql,$useWrite),
-            $values            
+        return $callback(
+            // 执行SQL
+            $this->getConnect()->statementExecute(
+                $sql,
+                $values,
+                $useWrite
+            )
         );
     }
+
+    
+    
     #-----------------------------
     # where条件
     #-----------------------------
@@ -1020,7 +1009,7 @@ class QueryBuilder
             $selects = ['*'];
         }
         $select = implode(',',$this->disposeAlias($selects));
-        return "select {$select} from{$this->getTable()}{$this->completeWhere($wheres)}{$this->completeClause($query)}";
+        return "select {$select} from{$this->getTable()}{$this->completeWhere($wheres)}{$this->completeClause($query)}".(is_null($this->lock)?:' '.trim($this->lock));
     }
 
     /**
@@ -1322,31 +1311,28 @@ class QueryBuilder
     {
         return $this->connect;
     }
-    
-    #-----------------------------
-    # 数据库操作类语句
-    #-----------------------------
 
     /**
-     * 获取表的创建语句
-     * @param string $table
-     * @return string
+     * 排他锁
+     * @return \DBquery\QueryBuilder
      * God Bless the Code
      */
-    public function showTable( string $table = null )
+    public function lockForUpdate()
     {
-        if (is_null($table)) 
-        {
-            $table = $this->getTable();
-        }
-        // 返回表信息
-        return $this->connect->fetchOneArr(
-            $this->run(
-                "show create table {$table}",
-                [],
-                $this->isWrite()
-            )
-        )["Create Table"];
+        $this->lock = 'for update';
+        return $this->useWrite();
     }
+
+    /**
+     * 共享锁
+     * @return \DBquery\QueryBuilder
+     * God Bless the Code
+     */
+    public function lockShare()
+    {
+        $this->lock = 'lock in share mode';
+        return $this->useWrite();
+    }
+    
 
 }

@@ -20,7 +20,7 @@ class DBquery
 		'pswd'   => false,
 	];
 
-	protected static $pdo;
+	protected static $conn;
 
 	protected static $query;
 
@@ -31,7 +31,7 @@ class DBquery
 	 * @author: chengf28
 	 * God Bless the Code
 	 * @param  array  $input_config 传入的配置文件
-	 * @return \DBquery\Connect::class
+	 * @return \DBquery\Connect
 	 */
 	public static function config( array $input_config )
 	{
@@ -40,9 +40,14 @@ class DBquery
 		$output_config = self::disposeConfig( $input_config );
 		// 添加默认内容
 		$output_config['dbtype'] = isset($input_config['dbtype']) ? strtolower($input_config['dbtype']) : 'Mysql';
-		self::$pdo = self::createPdo( self::$config = $output_config );
+		self::$conn = self::createPdo( self::$config = $output_config );
 	}
 
+	/**
+	 * 获取到配置信息
+	 * @return array
+	 * God Bless the Code
+	 */
 	public static function getConfig()
 	{
 		if (empty(self::$config)) 
@@ -180,24 +185,24 @@ class DBquery
 	/**
 	 * 创建PDO类
 	 * @param array $config
-	 * @return \DBquery\Connect::class
+	 * @return \DBquery\Connect
 	 */
 	public static function createPdo( array $config )
 	{
 		try
 		{
-			$pdo = new Connect(
+			$connect = new Connect;
+			$connect->setRead(
 				$readPdo = new PDO( 
-						$config['dbtype'].":".$config['read']['dsn'],
-						$config['read']['user'],
-						$config['read']['pswd'],[]
-					)
+					$config['dbtype'].":".$config['read']['dsn'],
+					$config['read']['user'],
+					$config['read']['pswd'],[]
+				)
 			);
-			
 			// 如果读写分离,创造写库
 			if ( self::hasWrite($config) ) 
 			{
-				$pdo->setWritePdo(
+				$connect->setWrite(
 					new PDO(
 						$config['dbtype'].":".$config['write']['dsn'],
 						$config['write']['user'],
@@ -205,9 +210,9 @@ class DBquery
 					)
 				);
 			}else{
-				$pdo->setWritePdo( $readPdo );
+				$connect->setWritePdo( $readPdo );
 			}
-			return $pdo;
+			return $connect;
 		}catch(\PDOException $e)
 		{
 			self::throwError( $e->getMessage() );
@@ -215,27 +220,14 @@ class DBquery
 	}
 
 	/**
-	 * 调用其他类
-	 *
-	 * @param string $method
-	 * @param array  $args
-	 * @return QueryBuilder::class
+	 * 设置表
+	 * @param string $table
+	 * @return DBquery\QueryBuilder
+	 * God Bless the Code
 	 */
-	public static function __callStatic( $method , $args )
+	public static function table(string $table)
 	{
-		// 框架化,可在此处使用容器注入依赖,插件使用,固定写死底层;
-		try{
-			if(method_exists(Query::class,$method))
-			{
-                return (new Query(self::$pdo))->setPrefix(self::getPrefix())->$method(...$args);
-			}else{
-				self::throwError("Can't not found the method {$method} in {Query::class}",__LINE__);
-			}
-		}catch(\Throwable $ex)
-		{
-			// 异常显示
-			die($ex->getTraceAsString());
-		}
+		return (new Query(self::$conn))->setPrefix(self::getPrefix())->table($table);
 	}
 
 	/**
@@ -257,5 +249,35 @@ class DBquery
 	private static function getPrefix()
 	{
 		return isset(self::$config['prefix']) ? self::$config['prefix'] : '';
+	}
+
+	/**
+	 * 开始事务
+	 * @return void
+	 * God Bless the Code
+	 */
+	public static function beginTransaction()
+	{
+		self::$conn->transaction();
+	}
+
+	/**
+	 * 回滚
+	 * @return void
+	 * God Bless the Code
+	 */
+	public static function rollback()
+	{
+		self::$conn->rollback();
+	}
+
+	/**
+	 * 提交
+	 * @return void
+	 * God Bless the Code
+	 */
+	public static function commit()
+	{
+		self::$conn->commit();
 	}
 }

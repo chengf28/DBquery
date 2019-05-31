@@ -43,7 +43,7 @@ DBquery::table('table_name')->all();
 ```
 ## 配置 Config:
 > 此处仅供参数,具体配置内容以实际需求为准;
-
+全局调用一次即可
 * 基本配置
 ```php
 $config = [
