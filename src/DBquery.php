@@ -55,10 +55,24 @@ class DBquery
 			$config['dbtype'] = isset($array_config['dbtype']) ? strtolower($array_config['dbtype']) : 'Mysql';
 			self::$config[$key] = $config;
 		}
-		// 创建pdo;
-		self::$conn = self::createPdo(
-			is_null(self::getSelect()) ? current(self::$config): self::$config[self::$select]
-		);
+	}
+
+
+	/**
+	 * 获取到PDO
+	 * @return \DBquery\ConnectInterface
+	 * God Bless the Code
+	 */
+	private static function getPdo()
+	{
+		if (is_null(self::$conn) || !self::$conn instanceof \DBquery\ConnectInterface)
+		{
+			// 创建pdo;
+			self::$conn = self::createPdo(
+				is_null(self::getSelect()) ? current(self::$config): self::$config[self::$select]
+			);
+		}
+		return self::$conn;
 	}
 
 	/**
@@ -250,7 +264,7 @@ class DBquery
 	 */
 	public static function table(string $table)
 	{
-		return (new Query(self::$conn))->setPrefix(self::getPrefix())->table($table);
+		return (new Query(self::getPdo()))->setPrefix(self::getPrefix())->table($table);
 	}
 
 	/**
