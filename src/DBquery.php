@@ -120,14 +120,12 @@ class DBquery
 	 */
 	protected static function parseConfig( array $input , $extendKey = null )
 	{
-		
 		if ( !is_null($extendKey)  && isset( $input[$extendKey] ) )
 		{
 			$config = self::changeKeyCase( $input[$extendKey] );
 		}else{
 			$config = $input;
 		}
-
 		$ret        = [];
 		$ret['dsn'] = '';
 		foreach (self::needKeys as $key => $isString) 
@@ -319,19 +317,32 @@ class DBquery
 		self::$conn->commit();
 	}
 
+	/**
+	 * 获取到当前配置的选择	
+	 * @return string
+	 * God Bless the Code
+	 */
 	public static function getSelect()
 	{
 		return self::$select;
 	}
 
+	/**
+	 * 指定连接
+	 * @param string|int $connect
+	 * @return void
+	 * God Bless the Code
+	 */
 	public static function connect($connect)
 	{
 		if (!isset(self::$config[$connect]))
 		{
+			// 配置不存在抛出异常
 			throw new \LogicException('Can\'t not found ' . $connect . ' in configs');
 		}
+		// 设置选择配置的选择
 		self::$select = $connect;
-		// 创建pdo;
+		// 更改PDO内容;
 		self::$conn = self::createPdo(
 			self::$config[$connect]
 		);
