@@ -20,12 +20,32 @@ class DBquery
 		'pswd'   => false,
 	];
 
+	/**
+	 * DBquery\ConnectInterface::class
+	 * @var DBquery\ConnectInterface
+	 * God Bless the Code
+	 */	
 	protected static $conn;
 
+	/**
+	 * Builder类
+	 * @var DBquery\QueryBuilder
+	 * God Bless the Code
+	 */
 	protected static $query;
 
+	/**
+	 * 配置容器
+	 * @var array
+	 * God Bless the Code
+	 */
 	protected static $config = [];
 
+	/**
+	 * 配置选择
+	 * @var string
+	 * God Bless the Code
+	 */
 	protected static $select;
 
 	/**
