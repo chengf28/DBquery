@@ -122,9 +122,9 @@ $config = [
 ]
 
 // 默认使用第一个 即 connects[0] 的配置
-DB::config($config);
+DBquery::config($config);
 // 切换其他数据库 ,第一个 connects[1]的配置
-DB::connect(1);
+DBquery::connect(1);
 
 /**
  * 使用关联数组
@@ -142,12 +142,12 @@ $config = [
 ]
 
 // 默认使用第一个 即 connects['db1'] 的配置
-DB::config($config); // 全局调用一次即可
+DBquery::config($config); // 全局调用一次即可
 // 切换其他数据库 ,第一个 connects['db2']的配置
-DB::connect('db2');
+DBquery::connect('db2');
 ...
 // 操作后可以再次切换
-DB::connect('db1');
+DBquery::connect('db1');
 ...
 ```
 ## 方法 Methods
