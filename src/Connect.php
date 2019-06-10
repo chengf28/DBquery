@@ -19,7 +19,7 @@ class Connect extends ConnectAbstract
 			$sth->bindValue(
 				$i+1,
 				$value,
-				is_numeric($value) ? PDO::PARAM_INT : (is_null($value)?:PDO::PARAM_STR)
+				is_int($value) ? PDO::PARAM_INT : (is_null($value)?:PDO::PARAM_STR)
 			);
 		}
 		// 执行
