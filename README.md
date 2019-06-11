@@ -156,4 +156,4 @@ DBquery::connect('db1');
 <!-- url地址 -->
 [homepage]: https://github.com/chengf28/DBquery
 [issues]: https://github.com/chengf28/DBquery/issues
-[methods]: https://github.com/chengf28/DBquery/blob/master/DBlite%20Methods%20Document.md
+[methods]: https://github.com/chengf28/DBquery/blob/master/DBquery%20Methods%20Document.md
