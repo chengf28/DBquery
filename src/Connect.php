@@ -12,9 +12,8 @@ class Connect implements ConnectInterface
 {
 	protected $pdo;
     protected $readpdo;
-    protected $transaction = 0;
-    const FETCH_ALL        = 0;
-    const FETCH_ONE        = 1;
+	protected $transaction = 0;
+	protected $fetch_type  = PDO::FETCH_OBJ;
 
     public function setRead(PDO $pdo)
 	{
@@ -72,6 +71,14 @@ class Connect implements ConnectInterface
         );
 	}
 	
+	/**
+	 * 执行sql
+	 * @param string $sql
+	 * @param array $values
+	 * @param bool $useWrite
+	 * @return \PDOStatement
+	 * IF I CAN GO DEATH, I WILL
+	 */
 	public function statementExecute(string $sql, array $values, bool $useWrite = true)
 	{
 		$sth = $this->getPDO($useWrite)->prepare($sql);
@@ -93,8 +100,49 @@ class Connect implements ConnectInterface
 		return $sth;
 	}
 
-	public function getAll()
+	/**
+	 * 一次性获取到所有的结果集
+	 * @param \PDOStatement $sth
+	 * @return array
+	 * IF I CAN GO DEATH, I WILL
+	 */
+	public function getAll(\PDOStatement $sth)
 	{
+		return $sth->fetchAll($this->getFetchType());
+	}
 
+	/**
+	 * 通过yield 返回生成器Generator 逐步获取到结果集
+	 * @param \PDOStatement $sth
+	 * @return \Generator
+	 * IF I CAN GO DEATH, I WILL
+	 */
+	public function get(\PDOStatement $sth)
+	{
+		while ($row = $sth->fetch($this->getFetchType())) 
+		{
+			yield $row;
+		}
+	}
+
+	/**
+	 * 获取的结果集数据类型
+	 * @return int
+	 * IF I CAN GO DEATH, I WILL
+	 */
+	public function getFetchType()
+	{
+		return $this->fetch_type;
+	}
+
+	/**
+	 * 设置获取结果集的数据类型
+	 * @param int $type
+	 * @return void
+	 * IF I CAN GO DEATH, I WILL
+	 */
+	public function setFetchType(int $type = PDO::FETCH_ASSOC)
+	{
+		$this->fetch_type = $type;
 	}
 }

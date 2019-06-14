@@ -291,6 +291,25 @@ class QueryBuilder
     }
 
     /**
+     * 返回数据集的生成器
+     * @return \Generator
+     * IF I CAN GO DEATH, I WILL
+     */
+    public function getByGenerator()
+    {
+        return $this->run(
+                $this->completeSelect(
+                    $this->getColums(),$this->getWheres(),$this->getJoins(),$this->getQuerys()
+                ),
+                $this->getBinds(),
+                $this->isWrite(false),
+                function($sth)
+                {
+                    return $this->getConnect()->get($sth);
+                }
+        );
+    }
+    /**
      * 添加筛选字段
      * @param array $columns
      * @return \DBquery\QueryBuilder
@@ -298,7 +317,7 @@ class QueryBuilder
      */
     public function select( $columns = ['*'] )
     {
-        $columns  = is_array($columns) ? $columns : func_get_args();
+        $columns       = is_array($columns) ? $columns : func_get_args();
         $this->columns = array_merge($this->columns,$columns);
 		return $this;
     }
@@ -311,7 +330,7 @@ class QueryBuilder
      */
     public function find( int $id = null )
     {
-        if (is_null($id)) 
+        if (is_null($id))
         {
             return $this->first();
         }
@@ -343,7 +362,7 @@ class QueryBuilder
                 $this->isWrite(false),
                 function($sth)
                 {
-                    return $sth->fetchAll(\PDO::FETCH_ASSOC);
+                    return $this->getConnect()->getAll($sth);
                 }
         );
     }
