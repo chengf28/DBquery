@@ -22,4 +22,6 @@ interface ConnectInterface
 
     public function statementExecute(string $sql, array $values, bool $useWrite = true);
 
+    public function getAll();
+    
 }
