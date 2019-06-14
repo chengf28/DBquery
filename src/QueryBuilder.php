@@ -1117,7 +1117,7 @@ class QueryBuilder
 
     private function completeJoin( array $joins = [] )
     {
-        return array_reduce( array_map(function ($item) 
+        return ' '.array_reduce( array_map(function ($item)
         {
             return "{$item['link']} {$this->disposeAlias($item['table'])} on {$this->disposeAlias($item['columnOne'])} {$item['operator']} {$this->disposeAlias($item['columnTwo'])}";
         }, $joins),function($carry , $item)
