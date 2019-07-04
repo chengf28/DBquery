@@ -9,29 +9,6 @@
    DBquery::table('user as tb1');
 ```
 ---
-## DBquery::setPrefix(string $prefix)
-设置表前缀 一般在 `config` array中添加 `prefix` 字段 可以自动设置,但是依旧可以强制重写
-```php
-   $config = [
-      // 预留配置,可不填写,目前仅支持mysql
-      'dbtype' => 'MYSQL',
-      'host'   => '127.0.0.1',
-      'port'   => 3306,
-      'write'  => [
-         'dbname' => 'write_test',
-      ],
-      'read' =>[
-         'dbname' => 'read_test',
-      ],
-      'user'   => 'root',
-      'pswd'   => 'root',
-      'prefix' => 'tb_', // 可以在配置文件中添加表前缀
-   ];
-   DBquery::config($config);
-   $db = DBquery::table('user'); // tb_user
-   $db->setPrefix('tb2_'); // tb2_user
-```
----
 ## DBquery::getPrefix()
 获取已经设置好的表前缀如果没有设置返回空字符串
 ```php
@@ -97,7 +74,7 @@
 ```
 ---
 ## DBquery::get()
-返回所有查询结果,一般为二维数组
+返回所有查询结果集,一般为二维数组
 ```php
    // select * from user;
    DBquery::table('user')->get();
@@ -105,18 +82,31 @@
 ## DBquery::all()
 `DBquery::get()` 别名
 
----
-
-## DBquery::select(array|string $columns)
-添加筛选字段,配合其他DQL语句使用;
+## DBquery::getByGenerator()
+返回一个`生成器`可以通过`foreach()`方法逐条获取到结果集
+**针对大量的数据集时,使用此方法可以有效节省内存;实际测试中1w条数据集获取使用`get()`方法将使用近5mb的内存,但是该方法同样获取,仅暂用200kb左右**
 ```php
-   // select id from user;
-   DBquery::table('user')->select('id')->get();
-   // select id,username from user;
-   DBquery::table('user')->select('id','username')->get();
-   DBquery::table('user')->select(['id','username'])->get();
+   $res = DBquery::table('user')->getByGenerator();
+   // 第一条结果集
+   var_dump($res->current());
+   // 位移;
+   $res->next();
+   // 第二条结果集
+   var_dump($res->current());
+
+   // 遍历获取
+   while ($row = $res->current()) 
+   {
+      $res->next();
+      var_dump($row);
+   }
+
+   foreach($res as $index => $row)
+   {
+      var_dump($row);
+   }
 ```
----
+
 ## DBquery::find([int $id])
 可选参数$id 查找符合条件的一条数据,如果不加条件返回数据表第一条数据,**与get()区别在于,get()即使只有一条数据,也是返回一个二维数组,find()仅会返回一维数组,key为查询的db columns ,value为对应的column的值** 可以搭配`select()`筛查单独的字段
 ```php
@@ -132,6 +122,19 @@
    DBquery::table('user')->where('id',2)->first();
 ```
 ---
+
+## DBquery::select(array|string $columns)
+添加筛选字段,配合其他DQL语句使用;
+```php
+   // select id from user;
+   DBquery::table('user')->select('id')->get();
+   // select id,username from user;
+   DBquery::table('user')->select('id','username')->get();
+   DBquery::table('user')->select(['id','username'])->get();
+```
+
+---
+
 ## DBquery::join(string $table , $columnOne , string $operator = null , string $columnTwo = null , string $link = 'inner')
 联表查询,$table 需要联接的表,$columnOne 关联列,$operator关联符号,$columnTwo 关联列2 $link关联符 默认为 inner join
 ```php

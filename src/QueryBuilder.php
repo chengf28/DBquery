@@ -1,6 +1,6 @@
 <?php
 namespace DBquery;
-use DBquery\ConnectAbstract as Connect;
+use DBquery\ConnectInterface;
 use DBquery\QueryStr;
 use DBquery\ValueProcess;
 
@@ -19,12 +19,6 @@ class QueryBuilder
 
     const alljoin = ['inner','left','right'];
 
-    /**
-     * query查询需要字段容器
-     * @var array
-     * God Bless the Code
-     */
-    protected $query = [];
     
     /**
      * 主表表名
@@ -32,27 +26,41 @@ class QueryBuilder
      * God Bless the Code
      */
     protected $table;
-
+    
     /**
      * select 字段容器
      * @var array
      */
     protected $columns = [];
-
+    
     /**
      * where 字段值容器
      * @var array
      * God Bless the Code
      */
     protected $binds;
-
+    
     /**
      * where 字段容器
      * @var array
      * God Bless the Code
      */
-    protected $wheres;
+    protected $wheres = [];
+    
+    /**
+     * 联表查询
+     * @var array
+     * God Bless the Code
+     */
+    protected $joins = [];
 
+    /**
+     * query查询需要字段容器
+     * @var array
+     * God Bless the Code
+     */
+    protected $query = [];
+    
     /**
      * 数据库操作层容器
      * @var \DBquery\Connect
@@ -88,12 +96,13 @@ class QueryBuilder
      */
     protected $lock = false;
 
+
     /**
      * 构造函数,依赖注入PDO底层
      * @param \DBquery\Connect $connect
      * God Bless the Code
      */
-    public function __construct( Connect $connect )
+    public function __construct( ConnectInterface $connect )
     {
         $this->connect = $connect;
     }
@@ -222,7 +231,7 @@ class QueryBuilder
             $this->where('id',$id);
         }
         return $this->run(
-            $this->completeDelete($this->getWheres(),$this->query),
+            $this->completeDelete($this->getWheres(),$this->getQuerys()),
             $this->getBinds(),
             $this->isWrite(true),
             function($sth)
@@ -282,6 +291,25 @@ class QueryBuilder
     }
 
     /**
+     * 返回数据集的生成器
+     * @return \Generator
+     * IF I CAN GO DEATH, I WILL
+     */
+    public function getByGenerator()
+    {
+        return $this->run(
+                $this->completeSelect(
+                    $this->getColums(),$this->getWheres(),$this->getJoins(),$this->getQuerys()
+                ),
+                $this->getBinds(),
+                $this->isWrite(false),
+                function($sth)
+                {
+                    return $this->getConnect()->get($sth);
+                }
+        );
+    }
+    /**
      * 添加筛选字段
      * @param array $columns
      * @return \DBquery\QueryBuilder
@@ -289,7 +317,7 @@ class QueryBuilder
      */
     public function select( $columns = ['*'] )
     {
-        $columns  = is_array($columns) ? $columns : func_get_args();
+        $columns       = is_array($columns) ? $columns : func_get_args();
         $this->columns = array_merge($this->columns,$columns);
 		return $this;
     }
@@ -302,7 +330,7 @@ class QueryBuilder
      */
     public function find( int $id = null )
     {
-        if (is_null($id)) 
+        if (is_null($id))
         {
             return $this->first();
         }
@@ -328,13 +356,13 @@ class QueryBuilder
     {
         return $this->run(
                 $this->completeSelect(
-                    $this->getColums(),$this->getWheres(),$this->query
+                    $this->getColums(),$this->getWheres(),$this->getJoins(),$this->getQuerys()
                 ),
                 $this->getBinds(),
                 $this->isWrite(false),
                 function($sth)
                 {
-                    return $sth->fetchAll(\PDO::FETCH_ASSOC);
+                    return $this->getConnect()->getAll($sth);
                 }
         );
     }
@@ -419,7 +447,7 @@ class QueryBuilder
             throw new \InvalidArgumentException('Can\'t not use '.$link);
         }
         $link .= ' join';
-        $this->query['1join'][] = compact('table','columnOne', 'operator','columnTwo', 'link');
+        $this->joins[] = compact('table','columnOne', 'operator','columnTwo', 'link');
         return $this;
     }
 
@@ -436,7 +464,7 @@ class QueryBuilder
      */
     public function limit( int $offset = 1 , int $max = null )
     {
-        $this->query['4limit'] = is_null($max) ? [$offset]:[$offset,$max];
+        $this->query['3limit'] = is_null($max) ? [$offset]:[$offset,$max];
         return $this;
     }
 
@@ -450,7 +478,7 @@ class QueryBuilder
      */
     public function orderBy(string $key, string $order)
     {
-        $this->query['3order'][trim($key)] = trim($order);
+        $this->query['2order'][trim($key)] = trim($order);
         return $this;
     }
 
@@ -461,7 +489,7 @@ class QueryBuilder
      */
     public function groupBy()
     {
-        $this->query['2group'] = func_get_args();
+        $this->query['1group'] = func_get_args();
         return $this;
     }
 
@@ -1005,18 +1033,18 @@ class QueryBuilder
      * @return string
      * God Bless the Code
      */
-    private function completeSelect( array $selects = [] , array $wheres , array $query = [])
+    private function completeSelect( array $selects = [] ,array $wheres, array $joins = [], array $query = [])
     {
         if( empty($selects) )
         {
             $selects = ['*'];
         }
         $select = implode(',',$this->disposeAlias($selects));
-        return "select {$select} from{$this->getTable()}{$this->completeWhere($wheres)}{$this->completeClause($query)}".(is_null($this->lock)?:' '.trim($this->lock));
+        return "select {$select} from{$this->getTable()}{$this->completeJoin($joins)}{$this->completeWhere($wheres)}{$this->completeClause($query)}".(is_null($this->lock)?:' '.trim($this->lock));
     }
 
     /**
-     * 处理 `join`,`limit`,`group by`,`order by` 字句
+     * 处理`limit`,`group by`,`order by` 字句
      * @param array $query
      * @return void
      * God Bless the Code
@@ -1089,7 +1117,7 @@ class QueryBuilder
 
     private function completeJoin( array $joins = [] )
     {
-        return array_reduce( array_map(function ($item) 
+        return ' '.array_reduce( array_map(function ($item)
         {
             return "{$item['link']} {$this->disposeAlias($item['table'])} on {$this->disposeAlias($item['columnOne'])} {$item['operator']} {$this->disposeAlias($item['columnTwo'])}";
         }, $joins),function($carry , $item)
@@ -1136,7 +1164,27 @@ class QueryBuilder
      */
     public function getWheres()
     {
-        return $this->wheres?: [];
+        return $this->wheres;
+    }
+
+    /**
+     * 获取到joins参数
+     * @return array
+     * IF I CAN GO DEATH, I WILL
+     */
+    public function getJoins()
+    {
+        return $this->joins;
+    }
+
+    /**
+     * 获取到 limit,group by , order by 等字段
+     * @return array
+     * IF I CAN GO DEATH, I WILL
+     */
+    public function getQuerys()
+    {
+        return $this->query;
     }
 
     /**

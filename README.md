@@ -150,10 +150,68 @@ DBquery::connect('db2');
 DBquery::connect('db1');
 ...
 ```
+---
+## 配置可选参数
+**默认的数据集格式是PDO::FETCH_OBJ**即每个row都是一个object对象,可以通过`DBquery::setDataType()`方法来修改获取的数据集类型,可以传入`DBquery::arr`获取`DBquery::obj`来修改数据集类型,也可以传入`PDO::FETCH_*`当然,你可以通过在$config中添加`datatype`在参数配置阶段进行设置;
+
+```php
+$config = ['db1'=>[
+    // 预留配置,可不填写,目前仅支持mysql
+    'dbtype' => 'MYSQL',
+    'host'   => '127.0.0.1',
+    'port'   => 3300,
+    'write'  => [
+        'dbname' => 'write_db',
+    ],
+    'read' =>[
+        'dbname' => 'read_db',
+    ],
+    'user'     => 'root',
+    'pswd'     => 'root',
+    'prefix'   => 'tb_',
+    'datatype' => 'array', // 写明 为 array类型,不填写或其他类型字符串默认为object类型, 也可以是`PDO::FETCH_*`或者DBquery::arr 及 DBquery::obj;
+],]
+// 如果不想修改配置文件,只是临时修改获取的数据类型;
+DBquery::config($config);
+
+DBquery::setDataType(DBquery::arr);
+
+DBquery::table('foo')->get(); // 获取数组类型的数据集
+
+DBquery::setDataType(DBquery::obj); // 切换回object类型的数据集格式;
+
+```
+---
+同样的可以在配置中提前设置表前缀 
+
+一般在 `config` array中添加 `prefix` 字段 可以自动设置,但是依旧可以强制重写
+```php
+   $config = [
+      // 预留配置,可不填写,目前仅支持mysql
+      'dbtype' => 'MYSQL',
+      'host'   => '127.0.0.1',
+      'port'   => 3306,
+      'write'  => [
+         'dbname' => 'write_test',
+      ],
+      'read' =>[
+         'dbname' => 'read_test',
+      ],
+      'user'   => 'root',
+      'pswd'   => 'root',
+      'prefix' => 'tb_', // 可以在配置文件中添加表前缀
+   ];
+   DBquery::config($config);
+   $db = DBquery::table('user'); // tb_user
+   $db->setPrefix('tb2_'); // tb2_user
+```
+
+
+
 ## 方法 Methods
 [点击查看][methods]
 
 <!-- url地址 -->
 [homepage]: https://github.com/chengf28/DBquery
 [issues]: https://github.com/chengf28/DBquery/issues
-[methods]: https://github.com/chengf28/DBquery/blob/master/DBlite%20Methods%20Document.md
+[methods]: https://github.com/chengf28/DBquery/blob/master/DBquery%20Methods%20Document.md

@@ -11,6 +11,9 @@ use DBquery\QueryStr;
  */
 class DBquery
 {
+	const obj = 5;
+	const arr = 2;
+
 	const needKeys = 
 	[
 		'host'   => '127.0.0.1',
@@ -53,7 +56,7 @@ class DBquery
 	 * @author: chengf28
 	 * God Bless the Code
 	 * @param  array  $input_config 传入的配置文件
-	 * @return \DBquery\Connect
+	 * @return void
 	 */
 	public static function config( array $input_config )
 	{
@@ -89,8 +92,10 @@ class DBquery
 		{
 			// 创建pdo;
 			self::$conn = self::createPdo(
-				is_null(self::getSelect()) ? current(self::$config): self::$config[self::$select]
+				self::getConfig()
 			);
+			// 配置数据集类型;
+			self::setDataType(self::getDataTypefromConfig());
 		}
 		return self::$conn;
 	}
@@ -100,15 +105,9 @@ class DBquery
 	 * @return array
 	 * God Bless the Code
 	 */
-	public static function getConfig()
+	private static function getConfig()
 	{
-		if (empty(self::$config)) 
-		{
-			self::$config = self::needKeys;
-			self::$config['pswd'] = 'root';
-			self::$config['user'] = 'root';
-		}
-		return self::$config;
+		return is_null(self::getSelect()) ? current(self::$config): self::$config[self::$select];
 	}
 
 	/**
@@ -128,6 +127,7 @@ class DBquery
 			$ret['read'] = $ret['write'];
 		}
 		isset($config['prefix']) && $ret['prefix'] = $config['prefix'];
+		isset($config['datatype']) && $ret['datatype'] = $config['datatype'];
 		return $ret;
 	}
 
@@ -282,7 +282,7 @@ class DBquery
 	 */
 	public static function table(string $table)
 	{
-		return (new Query(self::getPdo()))->setPrefix(self::getPrefix())->table($table);
+		return (new Query(self::getPdo()))->setPrefix(self::getPrefixfromConfig())->table($table);
 	}
 
 	/**
@@ -301,9 +301,9 @@ class DBquery
 	 * @return string
 	 * God Bless the Code
 	 */
-	private static function getPrefix()
+	private static function getPrefixfromConfig()
 	{
-		$config = is_null(self::getSelect()) ? current(self::$config): self::$config[self::$select];
+		$config = self::getConfig();
 		return isset($config['prefix']) ? $config['prefix'] : '';
 	}
 
@@ -366,5 +366,26 @@ class DBquery
 		self::$conn = self::createPdo(
 			self::$config[$connect]
 		);
+	}
+
+	/**
+	 * 设置获取数据的类型
+	 * @param int $type
+	 * @return void
+	 * IF I CAN GO DEATH, I WILL
+	 */
+	public static function setDataType( $type = \PDO::FETCH_OBJ)
+	{
+		if( !is_int($type) )
+		{
+			$type = strtolower($type) === 'array' ? self::arr:self::obj;
+		}
+		self::getPdo()->setFetchType($type);
+	}
+
+	private static function getDataTypefromConfig()
+	{
+		$config = self::getConfig();
+		return isset($config['datatype']) ? $config['datatype'] : self::obj;
 	}
 }

@@ -22,4 +22,12 @@ interface ConnectInterface
 
     public function statementExecute(string $sql, array $values, bool $useWrite = true);
 
+    public function getAll(\PDOStatement $sth);
+
+    public function get(\PDOStatement $sth);
+    
+	public function getFetchType();
+
+	public function setFetchType(int $type = PDO::FETCH_ASSOC);
+
 }
