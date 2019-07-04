@@ -1,8 +1,8 @@
 <?php
 namespace DBquery;
-use DBquery\ConnectInterface;
-use DBquery\QueryStr;
-use DBquery\ValueProcess;
+use DBquery\Connect\ConnectInterface;
+use DBquery\Common\QueryStr;
+use DBquery\Common\ValueProcess;
 
 /**
  * 语句构建
@@ -1261,7 +1261,7 @@ class QueryBuilder
 
     /**
      * 获取到connect类
-     * @return \DBquery\Connect
+     * @return \DBquery\Connect\ConnectInterface
      * God Bless the Code
      */
     public function getConnect()

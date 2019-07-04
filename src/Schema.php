@@ -1,11 +1,12 @@
 <?php
 namespace DBquery;
 use DBquery\ValueProcess;
-
+use DBquery\Common\ConfigParse;
 
 class Schema
 {
     use ValueProcess;
+    use ConfigParse;
 
     /**
      * 表名
@@ -23,7 +24,6 @@ class Schema
 
     public function table(string $table)
     {
-
     }
 
     private function common(string $key, int $length, string $type)

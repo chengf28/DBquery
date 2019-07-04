@@ -1,5 +1,5 @@
 <?php
-namespace DBquery;
+namespace DBquery\Connect;
 use \PDO;
 /**
  * 连接底层接口

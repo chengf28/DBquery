@@ -1,7 +1,7 @@
 <?php
-namespace DBquery;
+namespace DBquery\Connect;
 use \PDO;
-use DBquery\ConnectInterface;
+use DBquery\Connect\ConnectInterface;
 
 /**
  * 连接底层

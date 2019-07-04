@@ -1,5 +1,5 @@
 <?php
-namespace DBquery;
+namespace DBquery\Common;
 /**
  * 处理字段
  * @author chengf28 <chengf_28@163.com>
