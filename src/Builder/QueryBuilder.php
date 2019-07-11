@@ -1,5 +1,5 @@
 <?php
-namespace DBquery;
+namespace DBquery\Builder;
 use DBquery\Connect\ConnectInterface;
 use DBquery\Common\QueryStr;
 use DBquery\Common\ValueProcess;

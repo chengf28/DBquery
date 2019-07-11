@@ -1,7 +1,7 @@
 <?php 
 namespace DBquery;
 use DBquery\Connect\Connect;
-use DBquery\QueryBuilder as Query;
+use DBquery\Builder\QueryBuilder as Query;
 use DBquery\Common\QueryStr;
 use DBquery\Common\ConfigParse;
 use DBquery\Connect\ConnectInterface;
@@ -39,7 +39,7 @@ class DBquery
 
 	/**
 	 * Builder类
-	 * @var DBquery\QueryBuilder
+	 * @var DBquery\Builder\QueryBuilder
 	 * God Bless the Code
 	 */
 	protected static $query;
@@ -124,7 +124,7 @@ class DBquery
 	/**
 	 * 设置表
 	 * @param string $table
-	 * @return DBquery\QueryBuilder
+	 * @return DBquery\Builder\QueryBuilder
 	 * God Bless the Code
 	 */
 	public static function table(string $table)
