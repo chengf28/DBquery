@@ -1,12 +1,10 @@
 <?php
 namespace DBquery;
-use DBquery\ValueProcess;
 use DBquery\Common\ConfigParse;
-use DBquery\Builder\StructType;
+use DBquery\Builder\StructBuilder;
 
 class Schema
 {
-    use ValueProcess;
     use ConfigParse;
 
     /**
@@ -23,16 +21,11 @@ class Schema
      */
     protected $query = [];
 
-    
-    public static function build()
+    public static function createTable(string $table,callable $callback)
     {
-        
+        $builder = new StructBuilder($table);
+        call_user_func($callback,$builder);
+        $builder->toSql();
     }
 
-    public static function createTable(string $table,\callball $cable)
-    {
-        
-    }
-
-    
 }

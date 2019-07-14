@@ -38,23 +38,12 @@ trait ValueProcess
 
     /**
      * 处理key字段,加上`符号
-     * @param  string|array $key
-     * @return string|array
+     * @param  string $key
+     * @return string
      * God Bless the Code
      */
     private function disposeCommon( $key )
     {
-        // if (is_array($key)) 
-        // {
-        //     return array_map(function($value)
-        //     {
-        //         return $this->disposeCommon($value);
-        //     },$key);
-        // }
-        // if ($key instanceof \DBquery\QueryStr ) 
-        // {
-        //     return $key->get();
-        // }
         if ($key == '*')
         {
             return $key;

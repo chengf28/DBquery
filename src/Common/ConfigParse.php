@@ -102,7 +102,16 @@ trait ConfigParse
 		}
 		$ret        = [];
 		$ret['dsn'] = '';
-		foreach (self::needKeys as $key => $isString) 
+		
+		foreach (
+			[
+				'host'   => '127.0.0.1',
+				'port'   => '3306',
+				'dbname' => 'user',
+				'user'   => false,
+				'pswd'   => false,
+			] // 默认配置
+		as $key => $isString)
 		{
 			// 子类中不存在,则在父级(通用部分中)
 			if ( !isset($config[$key])  )

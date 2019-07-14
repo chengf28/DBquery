@@ -19,18 +19,6 @@ class DBquery
 	const arr = 2;
 
 	/**
-	 * 默认配置
-	 */
-	const needKeys = 
-	[
-		'host'   => '127.0.0.1',
-		'port'   => '3306',
-		'dbname' => 'user',
-		'user'   => false,
-		'pswd'   => false,
-	];
-
-	/**
 	 * DBquery\Connect\ConnectInterface::class
 	 * @var DBquer\Connect\ConnectInterface
 	 * God Bless the Code

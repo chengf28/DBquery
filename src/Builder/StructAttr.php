@@ -1,6 +1,9 @@
 <?php
 namespace DBquery\Builder;
 
+use DBquery\Common\ValueProcess;
+use DBquery\Builder\StructBuilder;
+
 /**
  * 字段属性构建类
  * @author chengf28 <chengf_28@163.com>
@@ -8,32 +11,104 @@ namespace DBquery\Builder;
  */
 class StructAttr
 {
-    private $key;
+    use ValueProcess;
 
     private $attr;
 
-    public function __construct($key)
+    private $builder;
+
+    private $key;
+    
+    public function __construct(StructBuilder $builder, string $type, string $key, $length)
     {
-        $this->key = $key;
+        $this->builder = $builder;
+        $this->key     = $key;
+        $this->attr[]  = $this->disposeAlias($key).' '.$type.'('.implode(',', $length).')';
     }
 
     /**
      * 设置注释
      * @param string $comment
-     * @return void
+     * @return \DBquery\Builder\StructAttr
      * Real programmers don't read comments, novices do
      */
     public function comment(string $comment)
     {
-        $this->attr['comment'] = $comment;
+        $this->attr[] = "comment '$comment'";
         return $this;
     }
 
-    public function default($default)
+    /**
+     * 设置默认值
+     * @param string $default
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function default(string $default)
     {
-        $this->attr['default'] = $default;
+        $this->attr[] = "default '$default'";
+        return $this;
     }
 
-    
+    /**
+     * 设置无符号类型
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function unsigned()
+    {
+        $this->attr[] = "unsigned";
+        return $this;
+    }    
 
+    /**
+     * 设置自动增值
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function autoIncrement()
+    {
+        $this->attr[] = "AUTO_INCREMENT";
+        return $this;
+    }
+
+    /**
+     * 设置不为NULL值
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function noNull()
+    {
+        $this->attr[] = "NOT NULL";
+        return $this;
+    }
+
+    /**
+     * 字符串化
+     * @return string
+     * Real programmers don't read comments, novices do
+     */
+    public function __toString()
+    {
+        return $this->toString();
+    }
+
+    /**
+     * 字符串化
+     * @return string
+     * Real programmers don't read comments, novices do
+     */
+    public function toString()
+    {
+        return trim(array_reduce($this->attr,function($carray,$narray){
+            return $carray .= " $narray";
+        },''));
+    }
+
+
+    public function primaryKey()
+    {
+        $this->builder->primaryKey($this->key);
+        return $this;
+    }
 }
