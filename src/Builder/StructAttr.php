@@ -34,7 +34,7 @@ class StructAttr
      */
     public function comment(string $comment)
     {
-        $this->attr[] = "comment '$comment'";
+        $this->attr[] = "COMMENT '$comment'";
         return $this;
     }
 
@@ -46,7 +46,7 @@ class StructAttr
      */
     public function default(string $default)
     {
-        $this->attr[] = "default '$default'";
+        $this->attr[] = "DEFAULT '$default'";
         return $this;
     }
 
@@ -74,12 +74,14 @@ class StructAttr
 
     /**
      * 设置不为NULL值
+     * @param bool $isNull
      * @return \DBquery\Builder\StructAttr
      * Real programmers don't read comments, novices do
      */
-    public function noNull()
+    public function null(bool $isNull = false)
     {
-        $this->attr[] = "NOT NULL";
+
+        $this->attr[] = ($isNull ? '': 'NOT ') . 'NULL';
         return $this;
     }
 
@@ -106,9 +108,26 @@ class StructAttr
     }
 
 
+    /**
+     * 将当前key设置为主键
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
     public function primaryKey()
     {
         $this->builder->primaryKey($this->key);
+        return $this;
+    }
+
+    /**
+     * 将当前key设置为唯一索引
+     * @param string $name
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function uniqueKey(string $name)
+    {
+        $this->builder->uniqueKey($name, $this->key);
         return $this;
     }
 }

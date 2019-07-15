@@ -15,11 +15,23 @@ class Connect implements ConnectInterface
 	protected $transaction = 0;
 	protected $fetch_type  = PDO::FETCH_OBJ;
 
+	/**
+	 * 设置读库
+	 * @param \PDO $pdo
+	 * @return void
+	 * Real programmers don't read comments, novices do
+	 */
     public function setRead(PDO $pdo)
 	{
 		$this->readpdo = $pdo;
 	}
 
+	/**
+	 * 设置写库
+	 * @param \PDO $pdo
+	 * @return void
+	 * Real programmers don't read comments, novices do
+	 */
 	public function setWrite(PDO $pdo)
 	{
 		$this->pdo = $pdo;
@@ -72,16 +84,44 @@ class Connect implements ConnectInterface
 	}
 	
 	/**
-	 * 执行sql
+	 * 执行sql返回PDOStatement类
 	 * @param string $sql
 	 * @param array $values
 	 * @param bool $useWrite
 	 * @return \PDOStatement
 	 * IF I CAN GO DEATH, I WILL
 	 */
-	public function statementExecute(string $sql, array $values, bool $useWrite = true)
+	public function executeReturnSth(string $sql, array $values = [], bool $useWrite = true)
 	{
 		$sth = $this->getPDO($useWrite)->prepare($sql);
+		$this->executeCommon($sth,$values);
+		return $sth;
+	}
+
+	/**
+	 * 执行sql返回执行结果
+	 * @param string $sql
+	 * @param array $values
+	 * @param bool $useWrite
+	 * @return bool
+	 * Real programmers don't read comments, novices do
+	 */
+	public function executeReturnRes(string $sql, array $values = [], bool $useWrite = true)
+	{
+		$sth = $this->getPDO($useWrite)->prepare($sql);
+		return $this->executeCommon($sth);
+	}
+
+	/**
+	 * 执行sql,及参数绑定
+	 * @param \PDOStatement $sth
+	 * @param array $values
+	 * @return bool
+	 * Real programmers don't read comments, novices do
+	 */
+	public function executeCommon(\PDOStatement $sth, array $values = [])
+	{
+		// 参数绑定
 		foreach ($values as $i => $value) 
 		{
 			$sth->bindValue(
@@ -91,14 +131,15 @@ class Connect implements ConnectInterface
 			);
 		}
 		// 执行
-		$sth->execute();
+		$res = $sth->execute();
 		// 执行错误
 		if ($sth->errorCode() !== '00000') 
 		{
 			throw new \LogicException($sth->errorInfo()[2]);
 		}
-		return $sth;
+		return $res;
 	}
+
 
 	/**
 	 * 一次性获取到所有的结果集

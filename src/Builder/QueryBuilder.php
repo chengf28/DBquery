@@ -583,7 +583,7 @@ class QueryBuilder
         }
         return $callback(
             // 执行SQL
-            $this->getConnect()->statementExecute(
+            $this->getConnect()->executeReturnSth(
                 $sql,
                 $values,
                 $useWrite

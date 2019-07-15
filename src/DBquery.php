@@ -37,7 +37,7 @@ class DBquery
 	 * @return \DBquery\Connect\ConnectInterface
 	 * God Bless the Code
 	 */
-	private static function getPdo()
+	protected static function getPdo()
 	{
 		// 第一次调用时创建Connect实例
 		if (is_null(self::$conn) || !self::$conn instanceof ConnectInterface)
@@ -136,7 +136,7 @@ class DBquery
 	 * @return string
 	 * God Bless the Code
 	 */
-	private static function getPrefixfromConfig()
+	protected static function getPrefixfromConfig()
 	{
 		$config = self::getConfig();
 		return isset($config['prefix']) ? $config['prefix'] : '';
@@ -209,7 +209,7 @@ class DBquery
 		self::getPdo()->setFetchType($type);
 	}
 
-	private static function getDataTypefromConfig()
+	protected static function getDataTypefromConfig()
 	{
 		$config = self::getConfig();
 		return isset($config['datatype']) ? $config['datatype'] : self::obj;

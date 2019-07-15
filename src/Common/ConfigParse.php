@@ -85,6 +85,22 @@ trait ConfigParse
 		return $ret;
 	}
 
+	/**
+	 * 参数检查字段及默认值
+	 * @return array
+	 * Real programmers don't read comments, novices do
+	 */
+	protected static function getNeeds()
+	{
+		return [
+			'host'   => '127.0.0.1',
+			'port'   => '3306',
+			'dbname' => 'user',
+			'user'   => false,
+			'pswd'   => false,
+		];
+	}
+
     /**
 	 * 解析配置数组
 	 * @param array $input
@@ -104,13 +120,7 @@ trait ConfigParse
 		$ret['dsn'] = '';
 		
 		foreach (
-			[
-				'host'   => '127.0.0.1',
-				'port'   => '3306',
-				'dbname' => 'user',
-				'user'   => false,
-				'pswd'   => false,
-			] // 默认配置
+			self::getNeeds()
 		as $key => $isString)
 		{
 			// 子类中不存在,则在父级(通用部分中)
