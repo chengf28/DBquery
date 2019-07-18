@@ -6,6 +6,8 @@ use DBquery\Common\QueryStr;
 use DBquery\Common\ConfigParse;
 use DBquery\Connect\ConnectInterface;
 use \PDO;
+use InvalidArgumentException;
+
 /**
  * DBquery配置解析及统一入口
  * @author chengf28 <chengf_28@163.com>
@@ -42,9 +44,14 @@ class DBquery
 		// 第一次调用时创建Connect实例
 		if (is_null(self::$conn) || !self::$conn instanceof ConnectInterface)
 		{
+			$config = self::getConfig();
+			if (!$config)
+			{
+				throw new InvalidArgumentException("It's Empty Config, Do you called DBquery::config() ?");
+			}
 			// 创建pdo;
 			self::$conn = self::createPdo(
-				self::getConfig()
+				$config
 			);
 
 			// 配置数据集类型;

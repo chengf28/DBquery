@@ -843,7 +843,12 @@ class QueryBuilder
         }
     }
 
-    protected function getBinds()
+    /**
+     * 获取到需要绑定的值
+     * @return array
+     * Real programmers don't read comments, novices do
+     */
+    public function getBinds()
     {
         return $this->binds?:[];
     }
