@@ -1,4 +1,4 @@
-> Schema分支用于 DML语句的实验
+> Schema分支用于 DDL语句的实验
 # [DBquery][homepage]
 简单的MySql查询构造器
 
