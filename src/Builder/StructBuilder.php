@@ -15,26 +15,56 @@ class StructBuilder
 
     use ValueProcess;
 
-    public $query;
+    /**
+     * 字段表
+     * @var array<DBquery\Builder\StructAttr>
+     * Real programmers don't read comments, novices do
+     */
+    public $column;
 
+    /**
+     * 表索引
+     * @var array<string>
+     * Real programmers don't read comments, novices do
+     */
     protected $index;
 
+    /**
+     * 表名
+     * @var string
+     * Real programmers don't read comments, novices do
+     */
     protected $table;
 
+    /**
+     * 表引擎
+     * @var string
+     * Real programmers don't read comments, novices do
+     */
     protected $engine;
 
+    /**
+     * 表默认编码
+     * @var string
+     * Real programmers don't read comments, novices do
+     */
     protected $charset;
 
+    /**
+     * 表注释
+     * @var string
+     * Real programmers don't read comments, novices do
+     */
     protected $comment;
 
     const ENGINE_InnoDB = 'InnoDB';
-    // const ENGINE_My = 'My';
+    const ENGINE_MyISAM = 'MyISAM';
 
     public function __construct(string $table)
     {
-        $this->table = $table;
-        $this->index = [];
-        $this->query = [];
+        $this->table  = $this->disposeAlias($table);
+        $this->index  = [];
+        $this->column = [];
     }
 
     /**
@@ -42,14 +72,44 @@ class StructBuilder
      * @return string
      * Real programmers don't read comments, novices do
      */
-    public function toSql()
+    public function create($from = null)
     {
-        $sql = 'CREATE TABLE ' . $this->table . ' (' . implode(',', $this->query);
-
-        if (!empty($this->index)) {
-            $sql .= ',' . implode(',', $this->index);
+        $sql = 'CREATE TABLE ' . $this->table;
+        if (!is_null($from)) 
+        {
+            return $sql . ' like ' . $this->disposeAlias($from);
         }
-        return $sql .= ')' . $this->getEngine() . $this->getCharset() . $this->getComment();
+        if (!empty($this->column)) 
+        {
+            $sql .= ' (' . PHP_EOL . implode(',' . PHP_EOL, $this->column);
+            if (!empty($this->index)) 
+            {
+                $sql .= ',' . PHP_EOL . implode(',' . PHP_EOL, $this->index) . PHP_EOL;
+            }
+            $sql .= ')';
+        }
+        return $sql .= $this->getEngine() . $this->getCharset() . $this->getComment();
+    }
+
+    /**
+     * 删除表
+     * @return string
+     * Real programmers don't read comments, novices do
+     */
+    public function drop()
+    {
+        return 'DROP TABLE IF EXISTS '.$this->table;
+    }
+
+    /**
+     * 复制表
+     * @param string|DBquery\Builder\QueryBuilder $from
+     * @return string
+     * Real programmers don't read comments, novices do
+     */
+    public function copy($from)
+    {
+        return 'CREATE TABLE ' . $this->table . ' AS ' . '(' . $from . ')';
     }
 
     /**
@@ -84,11 +144,11 @@ class StructBuilder
      */
     private function common(string $type, string $key, $length)
     {
-        return $this->query[] = new StructAttr(
-            $this,
+        return $this->column[] = new StructAttr(
+            $this, 
             $type,
-            $key,
-            !is_array($length) ? [$length] : $length
+            $key, 
+            $length
         );
     }
 
@@ -140,12 +200,12 @@ class StructBuilder
     /**
      * 设置主键
      * @param string|array $key
-     * @return void
+     * @return \DBquery\Builder\StructBuilder
      * Real programmers don't read comments, novices do
      */
     public function primaryKey($key)
     {
-        $this->index($key, 'PRIMARY');
+        return $this->index($key,'PRIMARY');
     }
 
     /**
@@ -153,17 +213,25 @@ class StructBuilder
      * @param string $name
      * @param string|array $key
      * @param string $using
-     * @return void
+     * @return \DBquery\Builder\StructAttr
      * Real programmers don't read comments, novices do
      */
     public function key(string $name, $key, string $using = null)
     {
-        $this->index($key, null, $name, $using);
+        return $this->index($key,null,$name, $using);
     }
 
+    /**
+     * 唯一索引
+     * @param string $name
+     * @param string|array $key
+     * @param string $using
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
     public function uniqueKey(string $name, $key, string $using = null)
     {
-        $this->index($key, 'UNIQUE', $name, $using);
+        return $this->index($key,'UNIQUE',$name,$using);
     }
 
     /**
@@ -172,7 +240,7 @@ class StructBuilder
      * @param string $type
      * @param string $name
      * @param string $using
-     * @return void
+     * @return \DBquery\Builder\StructAttr
      * Real programmers don't read comments, novices do
      */
     private function index($key, string $type = null, string $name = null, string $using = null)
@@ -188,9 +256,14 @@ class StructBuilder
         if (is_array($key)) {
             $key = implode(',', $key);
         }
-        $str .= '(' . $key . ')' . $using;
+        $str .= '(' . $key . ')' . ' ' . $using;
         $this->index[] = $str;
+        return $this;
     }
+
+    #-----------------------------
+    # 数值类型
+    #-----------------------------
 
     /**
      * `int`类型 4字节
@@ -317,14 +390,150 @@ class StructBuilder
     }
 
     /**
-     * `text`类型
+     * `text`类型 长文本
      * @param string $key
      * @param int $length
      * @return \DBquery\Builder\StructAttr
      * Real programmers don't read comments, novices do
      */
-    public function text(string $key, int $length = 255)
+    public function text(string $key)
     {
-        return $this->common(__FUNCTION__, $key, $length);
+        return $this->common(__FUNCTION__, $key, null);
+    }
+
+    /**
+     * 短文本字符串	0-255字节
+     * @param string $key
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function tinyText(string $key)
+    {
+        return $this->common(strtolower(__FUNCTION__), $key, null);
+    }
+
+    /**
+     * 中等长度文本数据 0-16,777,215字节
+     * @param string $key
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function mediumText(string $key)
+    {
+        return $this->common(strtolower(__FUNCTION__), $key, null);
+    }
+
+    /**
+     * 极大文本数据 0-4,294,967,295字节
+     * @param string $key
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function longText(string $key)
+    {
+        return $this->common(strtolower(__FUNCTION__), $key, null);
+    }
+
+    /**
+     * `blob` 二进制长文本
+     * @param string $key
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function blob(string $key)
+    {
+        return $this->common(__FUNCTION__, $key, null);
+    }
+
+    /**
+     * 不超过 255 个字符的二进制字符串 	0-255字节
+     * @param string $key
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function tinyBlob(string $key)
+    {
+        return $this->comment(strtolower(__FUNCTION__), $key, null);
+    }
+
+    /**
+     * 二进制形式的中等长度文本数据 0-16,777,215字节	
+     * @param string $key
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function mediumBlob(string $key)
+    {
+        return $this->comment(strtolower(__FUNCTION__), $key, null);
+    }
+
+    /**
+     * 二进制形式的极大文本数据 0-4 294,967,295字节
+     * @param string $key
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function longBlob(string $key)
+    {
+        return $this->comment(strtolower(__FUNCTION__), $key, null);
+    }
+
+    #-----------------------------
+    # 日期和时间类型
+    #-----------------------------
+    
+    /**
+     * `date`类型 YYYY-MM-DD	
+     * @param string $key
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function date(string $key)
+    {
+        return $this->common(__FUNCTION__, $key, null);
+    }
+
+    /**
+     * `time`类型 HH:MM:SS
+     * @param string $key
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function time(string $key)
+    {
+        return $this->common(__FUNCTION__, $key, null);
+    }
+
+    /**
+     * `year`类型 YYYY
+     * @param string $key
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function year(string $key)
+    {
+        return $this->common(__FUNCTION__, $key, null);
+    }
+
+    /**
+     * `datetime`类型 YYYY-MM-DD HH:MM:SS
+     * @param string $key
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function datetime(string $key)
+    {
+        return $this->common(__FUNCTION__, $key, null);
+    }
+
+    /**
+     * `timestamp` 	混合日期和时间值，时间戳 YYYYMMDD HHMMSS
+     * @param string $key
+     * @return \DBquery\Builder\StructAttr
+     * Real programmers don't read comments, novices do
+     */
+    public function timestamp(string $key)
+    {
+        return $this->common(__FUNCTION__, $key, null);
     }
 }

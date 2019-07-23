@@ -19,12 +19,18 @@ class StructAttr
     private $builder;
 
     private $key;
-
-    public function __construct(StructBuilder $builder, string $type, string $key, $length)
+    
+    public function __construct(StructBuilder $builder, string $type, string $key, $length = null)
     {
         $this->builder = $builder;
         $this->key     = $key;
-        $this->attr[]  = $this->disposeAlias($key) . ' ' . $type . '(' . implode(',', $length) . ')';
+        $attr          = $this->disposeAlias($key).' '.$type;
+        // !is_array($length)?[$length]:$length
+        if (!is_null($length))
+        {
+            $attr .=  '(' . (is_array($length) ? implode(',', $length) : $length) . ')';
+        }
+        $this->attr[]  = $attr;
     }
 
     /**

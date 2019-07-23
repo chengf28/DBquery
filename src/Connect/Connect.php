@@ -109,7 +109,7 @@ class Connect implements ConnectInterface
 	public function executeReturnRes(string $sql, array $values = [], bool $useWrite = true)
 	{
 		$sth = $this->getPDO($useWrite)->prepare($sql);
-		return $this->executeCommon($sth);
+		return $this->executeCommon($sth,$values);
 	}
 
 	/**
