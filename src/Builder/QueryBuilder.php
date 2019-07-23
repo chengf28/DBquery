@@ -33,7 +33,7 @@ class QueryBuilder
      * select 字段容器
      * @var array
      */
-    protected $columns = [];
+    protected $columns;
 
     /**
      * where 字段值容器
@@ -47,21 +47,30 @@ class QueryBuilder
      * @var array
      * God Bless the Code
      */
-    protected $wheres = [];
+    protected $wheres;
 
     /**
      * 联表查询
      * @var array
      * God Bless the Code
      */
-    protected $joins = [];
+    protected $joins;
 
     /**
      * query查询需要字段容器
      * @var array
      * God Bless the Code
      */
-    protected $query = [];
+    protected $query;
+
+
+    protected $groups;
+
+    protected $havings;
+
+    protected $orders;
+
+    protected $limits;
 
     /**
      * 数据库操作层容器
@@ -121,18 +130,6 @@ class QueryBuilder
     }
 
     /**
-     * 设置表名
-     * @param string $table
-     * @return \DBquery\Builder\QueryBuilder
-     * God Bless the Code
-     */
-    public function table(string $table)
-    {
-        $this->table = $table;
-        return $this;
-    }
-
-    /**
      * 设置表前缀
      * @param string $prefix
      * @return \DBquery\Builder\QueryBuilder
@@ -153,6 +150,19 @@ class QueryBuilder
     {
         return $this->prefix ?: '';
     }
+
+    /**
+     * 设置表名
+     * @param string $table
+     * @return \DBquery\Builder\QueryBuilder
+     * God Bless the Code
+     */
+    public function table(string $table)
+    {
+        $this->table = $table;
+        return $this;
+    }
+
     /**
      * 使用写库
      * @return \DBquery\Builder\QueryBuilder
@@ -507,6 +517,15 @@ class QueryBuilder
         return $this;
     }
 
+    /**
+     * 处理 `having` 语句
+     * @param array|string|callable $columns
+     * @param string $operator
+     * @param string $values
+     * @param string $link
+     * @return \DBquery\Builder\QueryBuilder
+     * Real programmers don't read comments, novices do
+     */
     public function having($columns, $operator = null, $values = '',  string $link = 'and')
     {
         $builder = new QueryBuilder($this->getConnect());
@@ -516,6 +535,22 @@ class QueryBuilder
         unset($builder);
         return $this;
     }
+
+    public function orHaving($columns, $operator = null, $values = '')
+    {
+        return $this->having($columns, $operator, $values, 'or');
+    }
+
+    public function havingBetween(string $columns, array $values, string $link = 'and', bool $boolean = true)
+    {
+        $builder = new QueryBuilder($this->getConnect());
+        $builder->whereBetween($columns, $values, $link, $boolean);
+        $this->query['2having'] = $builder->getWheres();
+        $this->setBinds($builder->getBinds(), 1);
+        unset($builder);
+        return $this;
+    }
+
 
     /**
      * 处理 group by 
@@ -668,7 +703,7 @@ class QueryBuilder
     }
 
     /**
-     * 处理` or where 语句`
+     * 处理 `or where 语句`
      * @param mixed $columns
      * @param mixed $operator
      * @param mixed $values
@@ -681,7 +716,7 @@ class QueryBuilder
     }
 
     /**
-     * 处理` where key between (?,?)`
+     * 处理 `where key between (?,?)`
      * @param string $columns
      * @param array $values
      * @param string $link
@@ -865,40 +900,7 @@ class QueryBuilder
         return $this;
     }
 
-    /**
-     * 绑定值到Columns中
-     * @param mixed $values
-     * @param int $type
-     * @return void
-     * God Bless the Code
-     */
-    protected function setBinds($values, int $type = 0)
-    {
-        if (is_array($values)) {
-            foreach ($values as $value) {
-                $this->binds[$type][] = $value;
-            }
-        } else {
-            $this->binds[$type][] = $values;
-        }
-    }
-
-    /**
-     * 获取到绑定数据
-     * @return array
-     * Real programmers don't read comments, novices do
-     */
-    public function getBinds()
-    {
-        $binds = [];
-        if (isset($this->binds[0])) {
-            $binds = $this->binds[0];
-        }
-        if (isset($this->binds[1])) {
-            $binds = $this->megreValues($this->binds[1], $binds);
-        }
-        return $binds;
-    }
+    
 
     /**
      * 处理数组类型column
@@ -974,6 +976,23 @@ class QueryBuilder
     }
 
     /**
+     * 获取 update 类型的SQL语句
+     * @param array $update
+     * @param array $wheres
+     * @return string
+     * God Bless the Code
+     */
+    private function completeUpdate(array $update, array $wheres)
+    {
+        // 处理更新字段
+        $sql = trim(array_reduce(array_keys($update), function ($carry, $item) {
+            return $carry .= " {$this->disposeAlias($item)} = {$this->disposePlaceholder($item)} ,";
+        }), ',');
+
+        return "update {$this->getTable()} set {$sql}{$this->completeWhere($wheres)}";
+    }
+
+    /**
      * 获取删除sql
      * @param array $wheres
      * @param array $query
@@ -983,6 +1002,29 @@ class QueryBuilder
     private function completeDelete(array $wheres, array $query = [])
     {
         return "delete from {$this->getTable()}{$this->completeWhere($wheres)}{$this->completeClause($query)}";
+    }
+
+    /**
+     * 获取 select 类型的SQL语句
+     * @param array $selects
+     * @param array $wheres
+     * @return string
+     * God Bless the Code
+     */
+    private function completeSelect(array $selects = [], array $wheres, array $joins = [], array $query = [])
+    {
+        if (empty($selects)) {
+            $selects = ['*'];
+        }
+        $select = implode(',', $this->disposeAlias($selects));
+        $sql    = '';
+        if ($this->isUnion()) {
+            $sql = $this->completeUnion($this->unions);
+        }
+        return $sql . "select {$select} from {$this->getTable()}" .
+            $this->completeJoin($joins) .
+            $this->completeWhere($wheres) .
+            $this->completeClause($query) . (is_null($this->lock) ?: '' . trim($this->lock));
     }
 
     /**
@@ -1060,48 +1102,6 @@ class QueryBuilder
     private function completeWhereClosure(array $wheres)
     {
         return ' (' . $this->completeWhereDispatch($wheres['columns']) . ')';
-    }
-
-    /**
-     * 获取 update 类型的SQL语句
-     * @param array $update
-     * @param array $wheres
-     * @return string
-     * God Bless the Code
-     */
-    private function completeUpdate(array $update, array $wheres)
-    {
-        // 处理更新字段
-        $sql = trim(array_reduce(array_keys($update), function ($carry, $item) {
-            return $carry .= " {$this->disposeAlias($item)} = {$this->disposePlaceholder($item)} ,";
-        }), ',');
-
-        return "update {$this->getTable()} set {$sql}{$this->completeWhere($wheres)}";
-    }
-
-    /**
-     * 获取 select 类型的SQL语句
-     * @param array $selects
-     * @param array $wheres
-     * @return string
-     * God Bless the Code
-     */
-    private function completeSelect(array $selects = [], array $wheres, array $joins = [], array $query = [])
-    {
-        if (empty($selects)) {
-            $selects = ['*'];
-        }
-        $select = implode(',', $this->disposeAlias($selects));
-        $sql    = '';
-        if ($this->isUnion()) {
-            $sql = $this->completeUnion($this->unions);
-        }
-        $sql .=  "select {$select} from {$this->getTable()}" .
-            $this->completeJoin($joins) .
-            $this->completeWhere($wheres) .
-            $this->completeClause($query) . (is_null($this->lock) ?: '' . trim($this->lock));
-
-        return $sql;
     }
 
     /**
@@ -1253,18 +1253,57 @@ class QueryBuilder
      */
     public function getWheres()
     {
-        return $this->wheres;
+        return $this->wheres ?: [];
+    }
+
+    
+
+
+    /**
+     * 获取到connect类
+     * @return \DBquery\Connect\ConnectInterface
+     * God Bless the Code
+     */
+    public function getConnect()
+    {
+        return $this->connect;
     }
 
     /**
-     * 获取到joins参数
-     * @return array
-     * IF I CAN GO DEATH, I WILL
+     * 绑定值到Columns中
+     * @param mixed $values
+     * @param int $type
+     * @return void
+     * God Bless the Code
      */
-    public function getJoins()
+    protected function setBinds($values, int $type = 0)
     {
-        return $this->joins;
+        if (is_array($values)) {
+            foreach ($values as $value) {
+                $this->binds[$type][] = $value;
+            }
+        } else {
+            $this->binds[$type][] = $values;
+        }
     }
+
+    /**
+     * 获取到绑定数据
+     * @return array
+     * Real programmers don't read comments, novices do
+     */
+    public function getBinds()
+    {
+        $binds = [];
+        if (isset($this->binds[0])) {
+            $binds = $this->binds[0];
+        }
+        if (isset($this->binds[1])) {
+            $binds = $this->megreValues($this->binds[1], $binds);
+        }
+        return $binds;
+    }
+
 
     /**
      * 获取到 limit,group by , order by 等字段
@@ -1301,6 +1340,36 @@ class QueryBuilder
         return $this->columns ?: [];
     }
 
+
+    public function getGrounps()
+    {
+        return $this->groups ?: [];
+    }
+
+    public function getHavings()
+    {
+        return $this->havings ?: [];
+    }
+
+    /**
+     * 获取到joins参数
+     * @return array
+     * IF I CAN GO DEATH, I WILL
+     */
+    public function getJoins()
+    {
+        return $this->joins ?: [];
+    }
+
+    public function getLimits()
+    {
+        return $this->limits ?: [];
+    }
+
+    public function getOrders()
+    {
+        return $this->orders ?: [];
+    }
     /**
      * 是否使用写库
      * @param bool $default
@@ -1348,15 +1417,7 @@ class QueryBuilder
         return $this;
     }
 
-    /**
-     * 获取到connect类
-     * @return \DBquery\Connect\ConnectInterface
-     * God Bless the Code
-     */
-    public function getConnect()
-    {
-        return $this->connect;
-    }
+    
 
     /**
      * 排他锁
