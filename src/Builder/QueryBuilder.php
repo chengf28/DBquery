@@ -65,7 +65,7 @@ class QueryBuilder
 
     /**
      * 数据库操作层容器
-     * @var \DBquery\Connect
+     * @var \DBquery\Connect\ConnectInterface
      * God Bless the Code
      */
     protected $connect;
@@ -112,7 +112,7 @@ class QueryBuilder
 
     /**
      * 构造函数,依赖注入PDO底层
-     * @param \DBquery\Connect $connect
+     * @param \DBquery\Connect\ConnectInterface $connect
      * God Bless the Code
      */
     public function __construct(ConnectInterface $connect)
@@ -507,15 +507,13 @@ class QueryBuilder
         return $this;
     }
 
-
-
-    public function having()
+    public function having($columns, $operator = null, $values = '',  string $link = 'and')
     {
-        if (!$this->isUnion()) {
-            $this->query['2having'] = [];
-        } else {
-            $this->unionQuerys['2having'] = [];
-        }
+        $builder = new QueryBuilder($this->getConnect());
+        $builder->where($columns, $operator, $values, $link);
+        $this->query['2having'] = $builder->getWheres();
+        $this->setBinds($builder->getBinds(),1);
+        unset($builder);
         return $this;
     }
 
@@ -634,6 +632,15 @@ class QueryBuilder
     #-----------------------------
     # where条件
     #-----------------------------
+    /**
+     * 处理`where`语句
+     * @param array|string|callable $columns
+     * @param string $operator
+     * @param string $values
+     * @param string $link
+     * @return \DBquery\Builder\QueryBuilder
+     * Real programmers don't read comments, novices do
+     */
     public function where($columns, $operator = null, $values = '',  string $link = 'and')
     {
         /**
@@ -861,23 +868,38 @@ class QueryBuilder
     /**
      * 绑定值到Columns中
      * @param mixed $values
+     * @param int $type
      * @return void
      * God Bless the Code
      */
-    protected function setBinds($values)
+    protected function setBinds($values, int $type = 0)
     {
         if (is_array($values)) {
             foreach ($values as $value) {
-                $this->binds[] = $value;
+                $this->binds[$type][] = $value;
             }
         } else {
-            $this->binds[] = $values;
+            $this->binds[$type][] = $values;
         }
     }
 
+    /**
+     * 获取到绑定数据
+     * @return array
+     * Real programmers don't read comments, novices do
+     */
     public function getBinds()
     {
-        return $this->binds ?: [];
+        $binds = [];
+        if (isset($this->binds[0])) 
+        {
+            $binds = $this->binds[0];
+        }
+        if (isset($this->binds[1])) 
+        {
+            $binds = $this->megreValues($this->binds[1],$binds);
+        }
+        return $binds;
     }
 
     /**
@@ -974,6 +996,15 @@ class QueryBuilder
     {
         if ($sql = $this->completeWhereDispatch($wheres)) {
             return ' where' . $sql;
+        }
+        return '';
+    }
+
+    private function completeHaving(array $havings)
+    {
+        if ($sql = $this->completeWhereDispatch($havings)) 
+        {
+            return 'having' . $sql;
         }
         return '';
     }
