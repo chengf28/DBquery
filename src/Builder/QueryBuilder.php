@@ -512,7 +512,7 @@ class QueryBuilder
         $builder = new QueryBuilder($this->getConnect());
         $builder->where($columns, $operator, $values, $link);
         $this->query['2having'] = $builder->getWheres();
-        $this->setBinds($builder->getBinds(),1);
+        $this->setBinds($builder->getBinds(), 1);
         unset($builder);
         return $this;
     }
@@ -891,13 +891,11 @@ class QueryBuilder
     public function getBinds()
     {
         $binds = [];
-        if (isset($this->binds[0])) 
-        {
+        if (isset($this->binds[0])) {
             $binds = $this->binds[0];
         }
-        if (isset($this->binds[1])) 
-        {
-            $binds = $this->megreValues($this->binds[1],$binds);
+        if (isset($this->binds[1])) {
+            $binds = $this->megreValues($this->binds[1], $binds);
         }
         return $binds;
     }
@@ -1002,8 +1000,7 @@ class QueryBuilder
 
     private function completeHaving(array $havings)
     {
-        if ($sql = $this->completeWhereDispatch($havings)) 
-        {
+        if ($sql = $this->completeWhereDispatch($havings)) {
             return 'having' . $sql;
         }
         return '';
@@ -1099,11 +1096,10 @@ class QueryBuilder
         if ($this->isUnion()) {
             $sql = $this->completeUnion($this->unions);
         }
-        $sql .=  "select {$select} from {$this->getTable()}" . 
-                $this->completeJoin($joins).
-                $this->completeWhere($wheres).
-                $this->completeClause($query).
-                (is_null($this->lock) ?: '' . trim($this->lock));
+        $sql .=  "select {$select} from {$this->getTable()}" .
+            $this->completeJoin($joins) .
+            $this->completeWhere($wheres) .
+            $this->completeClause($query) . (is_null($this->lock) ?: '' . trim($this->lock));
 
         return $sql;
     }
@@ -1187,8 +1183,7 @@ class QueryBuilder
      */
     private function completeJoin(array $joins = [])
     {
-        if (empty($joins)) 
-        {
+        if (empty($joins)) {
             return '';
         }
         return ' ' . array_reduce(array_map(function ($item) {
@@ -1278,8 +1273,7 @@ class QueryBuilder
      */
     public function getQuerys()
     {
-        if ($this->isUnion()) 
-        {
+        if ($this->isUnion()) {
             return $this->unionQuerys;
         }
         return $this->query;
