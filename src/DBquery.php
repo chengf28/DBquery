@@ -1,11 +1,14 @@
-<?php 
+<?php
+
 namespace DBquery;
+
 use DBquery\Connect\Connect;
 use DBquery\Builder\QueryBuilder as Query;
 use DBquery\Common\QueryStr;
 use DBquery\Common\ConfigParse;
 use DBquery\Connect\ConnectInterface;
 use \PDO;
+
 /**
  * DBquery配置解析及统一入口
  * @author chengf28 <chengf_28@163.com>
@@ -22,7 +25,7 @@ class DBquery
 	 * DBquery\Connect\ConnectInterface::class
 	 * @var DBquer\Connect\ConnectInterface
 	 * God Bless the Code
-	 */	
+	 */
 	protected static $conn;
 
 	/**
@@ -40,8 +43,7 @@ class DBquery
 	protected static function getPdo()
 	{
 		// 第一次调用时创建Connect实例
-		if (is_null(self::$conn) || !self::$conn instanceof ConnectInterface)
-		{
+		if (is_null(self::$conn) || !self::$conn instanceof ConnectInterface) {
 			// 创建pdo;
 			self::$conn = self::createPdo(
 				self::getConfig()
@@ -63,9 +65,9 @@ class DBquery
 	 * @return void
 	 * God Bless the Code
 	 */
-	public static function throwError( $message = '',$line = __LINE__ )
+	public static function throwError($message = '', $line = __LINE__)
 	{
-		throw new \ErrorException($message,9999,1,__FILE__,$line);
+		throw new \ErrorException($message, 9999, 1, __FILE__, $line);
 		return;
 	}
 
@@ -77,42 +79,41 @@ class DBquery
 	 * @param array $config
 	 * @return \DBquery\Connect
 	 */
-	public static function createPdo( array $config )
+	public static function createPdo(array $config)
 	{
-		try
-		{
+		try {
 			$connect = new Connect;
 			$connect->setRead(
-				$readPdo = new PDO( 
-					$config['dbtype'].":".$config['read']['dsn'],
+				$readPdo = new PDO(
+					$config['dbtype'] . ":" . $config['read']['dsn'],
 					$config['read']['user'],
-					$config['read']['pswd'],[]
+					$config['read']['pswd'],
+					[]
 				)
 			);
 			// 如果读写分离,创造写库
-			if ( self::hasWrite($config) ) 
-			{
+			if (self::hasWrite($config)) {
 				$connect->setWrite(
 					new PDO(
-						$config['dbtype'].":".$config['write']['dsn'],
+						$config['dbtype'] . ":" . $config['write']['dsn'],
 						$config['write']['user'],
-						$config['write']['pswd'],[]
+						$config['write']['pswd'],
+						[]
 					)
 				);
-			}else{
-				$connect->setWritePdo( $readPdo );
+			} else {
+				$connect->setWritePdo($readPdo);
 			}
 			return $connect;
-		}catch(\PDOException $e)
-		{
-			self::throwError( $e->getMessage() );
+		} catch (\PDOException $e) {
+			self::throwError($e->getMessage());
 		}
 	}
 
 	/**
 	 * 设置表
 	 * @param string $table
-	 * @return DBquery\Builder\QueryBuilder
+	 * @return \DBquery\Builder\QueryBuilder
 	 * God Bless the Code
 	 */
 	public static function table(string $table)
@@ -126,7 +127,7 @@ class DBquery
 	 * @return string
 	 * God Bless the Code
 	 */
-	public static function raw( string $string )
+	public static function raw(string $string)
 	{
 		return new QueryStr($string);
 	}
@@ -181,8 +182,7 @@ class DBquery
 	public static function connect($connect)
 	{
 		$config = self::getConfig();
-		if (!isset($config[$connect]))
-		{
+		if (!isset($config[$connect])) {
 			// 配置不存在抛出异常
 			throw new \LogicException('Can\'t not found ' . $connect . ' in configs');
 		}
@@ -200,11 +200,10 @@ class DBquery
 	 * @return void
 	 * IF I CAN GO DEATH, I WILL
 	 */
-	public static function setDataType( $type = \PDO::FETCH_OBJ)
+	public static function setDataType($type = \PDO::FETCH_OBJ)
 	{
-		if( !is_int($type) )
-		{
-			$type = strtolower($type) === 'array' ? self::arr:self::obj;
+		if (!is_int($type)) {
+			$type = strtolower($type) === 'array' ? self::arr : self::obj;
 		}
 		self::getPdo()->setFetchType($type);
 	}

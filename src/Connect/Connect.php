@@ -1,5 +1,7 @@
 <?php
+
 namespace DBquery\Connect;
+
 use \PDO;
 use DBquery\Connect\ConnectInterface;
 
@@ -11,7 +13,7 @@ use DBquery\Connect\ConnectInterface;
 class Connect implements ConnectInterface
 {
 	protected $pdo;
-    protected $readpdo;
+	protected $readpdo;
 	protected $transaction = 0;
 	protected $fetch_type  = PDO::FETCH_OBJ;
 
@@ -21,7 +23,7 @@ class Connect implements ConnectInterface
 	 * @return void
 	 * Real programmers don't read comments, novices do
 	 */
-    public function setRead(PDO $pdo)
+	public function setRead(PDO $pdo)
 	{
 		$this->readpdo = $pdo;
 	}
@@ -35,54 +37,52 @@ class Connect implements ConnectInterface
 	public function setWrite(PDO $pdo)
 	{
 		$this->pdo = $pdo;
-    }
-
-    /**
-     * 开始事务
-     * @return void
-     * God Bless the Code
-     */
-    public function transaction()
-    {
-        ++$this->transaction;
-        $this->pdo->beginTransaction();
-    }
-
-    /**
-     * 事务回滚
-     * @return void
-     * God Bless the Code
-     */
-    public function rollback()
-    {
-        $this->pdo->rollback();
-        --$this->transaction;
-    }
-    
-    /**
-     * 事务提交
-     * @return void
-     * God Bless the Code
-     */
-    public function commit()
-    {
-        $this->pdo->commit();
-        --$this->transaction;
-    }
-    /**
-     * 返回PDO
-     * @param bool $useWrite
-     * @return pdo
-     * God Bless the Code
-     */
-    public function getPDO(bool $useWrite = true)
-    {
-        // 如果使用读库,但是使用了事务,则改回写库
-        return $useWrite? $this->pdo: (
-            $this->transaction === 0? $this->readpdo: $this->pdo
-        );
 	}
-	
+
+	/**
+	 * 开始事务
+	 * @return void
+	 * God Bless the Code
+	 */
+	public function transaction()
+	{
+		++$this->transaction;
+		$this->pdo->beginTransaction();
+	}
+
+	/**
+	 * 事务回滚
+	 * @return void
+	 * God Bless the Code
+	 */
+	public function rollback()
+	{
+		$this->pdo->rollback();
+		--$this->transaction;
+	}
+
+	/**
+	 * 事务提交
+	 * @return void
+	 * God Bless the Code
+	 */
+	public function commit()
+	{
+		$this->pdo->commit();
+		--$this->transaction;
+	}
+	/**
+	 * 返回PDO
+	 * @param bool $useWrite
+	 * @return pdo
+	 * God Bless the Code
+	 */
+	public function getPDO(bool $useWrite = true)
+	{
+		// 如果使用读库,但是使用了事务,则改回写库
+		return $useWrite ? $this->pdo : ($this->transaction === 0 ? $this->readpdo : $this->pdo);
+	}
+
 	/**
 	 * 执行sql返回PDOStatement类
 	 * @param string $sql
@@ -94,7 +94,7 @@ class Connect implements ConnectInterface
 	public function executeReturnSth(string $sql, array $values = [], bool $useWrite = true)
 	{
 		$sth = $this->getPDO($useWrite)->prepare($sql);
-		$this->executeCommon($sth,$values);
+		$this->executeCommon($sth, $values);
 		return $sth;
 	}
 
@@ -122,19 +122,17 @@ class Connect implements ConnectInterface
 	public function executeCommon(\PDOStatement $sth, array $values = [])
 	{
 		// 参数绑定
-		foreach ($values as $i => $value) 
-		{
+		foreach ($values as $i => $value) {
 			$sth->bindValue(
-				$i+1,
+				$i + 1,
 				$value,
-				is_int($value) ? PDO::PARAM_INT : (is_null($value)?:PDO::PARAM_STR)
+				is_int($value) ? PDO::PARAM_INT : (is_null($value) ?: PDO::PARAM_STR)
 			);
 		}
 		// 执行
 		$res = $sth->execute();
 		// 执行错误
-		if ($sth->errorCode() !== '00000') 
-		{
+		if ($sth->errorCode() !== '00000') {
 			throw new \LogicException($sth->errorInfo()[2]);
 		}
 		return $res;
@@ -160,8 +158,7 @@ class Connect implements ConnectInterface
 	 */
 	public function get(\PDOStatement $sth)
 	{
-		while ($row = $sth->fetch($this->getFetchType())) 
-		{
+		while ($row = $sth->fetch($this->getFetchType())) {
 			yield $row;
 		}
 	}

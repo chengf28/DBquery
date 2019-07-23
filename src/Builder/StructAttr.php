@@ -1,4 +1,5 @@
 <?php
+
 namespace DBquery\Builder;
 
 use DBquery\Common\ValueProcess;
@@ -18,12 +19,12 @@ class StructAttr
     private $builder;
 
     private $key;
-    
+
     public function __construct(StructBuilder $builder, string $type, string $key, $length)
     {
         $this->builder = $builder;
         $this->key     = $key;
-        $this->attr[]  = $this->disposeAlias($key).' '.$type.'('.implode(',', $length).')';
+        $this->attr[]  = $this->disposeAlias($key) . ' ' . $type . '(' . implode(',', $length) . ')';
     }
 
     /**
@@ -59,7 +60,7 @@ class StructAttr
     {
         $this->attr[] = "unsigned";
         return $this;
-    }    
+    }
 
     /**
      * 设置自动增值
@@ -81,7 +82,7 @@ class StructAttr
     public function null(bool $isNull = false)
     {
 
-        $this->attr[] = ($isNull ? '': 'NOT ') . 'NULL';
+        $this->attr[] = ($isNull ? '' : 'NOT ') . 'NULL';
         return $this;
     }
 
@@ -102,9 +103,9 @@ class StructAttr
      */
     public function toString()
     {
-        return trim(array_reduce($this->attr,function($carray,$narray){
+        return trim(array_reduce($this->attr, function ($carray, $narray) {
             return $carray .= " $narray";
-        },''));
+        }, ''));
     }
 
 

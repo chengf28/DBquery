@@ -1,20 +1,23 @@
 <?php
+
 namespace DBquery;
+
 use DBquery\Builder\StructBuilder;
 use DBquery\DBquery;
+
 class Schema extends DBquery
 {
     protected static function getNeeds()
     {
         return [
             'host'   => '127.0.0.1',
-			'port'   => '3306',
-			'user'   => false,
-			'pswd'   => false,
+            'port'   => '3306',
+            'user'   => false,
+            'pswd'   => false,
         ];
     }
 
-   
+
     /**
      * 创建表
      * @param string $table
@@ -28,7 +31,7 @@ class Schema extends DBquery
     public static function createTable(string $table, callable $callback, string $engine = StructBuilder::ENGINE_InnoDB, string $charset = 'utf8', string $collate = null)
     {
         $builder = (new StructBuilder(self::getTableName($table)))->setEngine($engine)->setCharset($charset, $collate);
-        call_user_func($callback,$builder);
+        call_user_func($callback, $builder);
         return self::run($builder->toSql());
     }
 
@@ -40,7 +43,7 @@ class Schema extends DBquery
      */
     public static function deteleTable(string $table)
     {
-        return self::run( 'DROP TABLE IF EXISTS '.self::getTableName($table));
+        return self::run('DROP TABLE IF EXISTS ' . self::getTableName($table));
     }
 
     /**
@@ -51,12 +54,15 @@ class Schema extends DBquery
      */
     public static function getTableName(string $table)
     {
-        return self::getPrefixfromConfig().$table;
+        return self::getPrefixfromConfig() . $table;
     }
 
-    public static function run(string $sql){
+    public static function run(string $sql)
+    {
         return self::getPdo()->executeReturnRes(
-            $sql,[],true
+            $sql,
+            [],
+            true
         );
     }
 }

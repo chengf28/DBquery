@@ -1,5 +1,7 @@
 <?php
+
 namespace DBquery\Common;
+
 /**
  * 不需要处理的字段容器
  * @author chengf28 <chengf_28@163.com>
@@ -15,7 +17,7 @@ class QueryStr
         $this->set($value);
     }
 
-    public function set( $value )
+    public function set($value)
     {
         $this->string = $value;
     }

@@ -193,6 +193,15 @@ group by 子句
    // select * from `user` group by `user`, `id`
    DBquery::table('user')->groupBy('user','id')->toSql(1)->get();
 ```
+## DBquery::union(\DBquery\Builder\QueryBuilder $query)
+union 连接两个以上的 SELECT 语句的结果组合到一个结果集合中,**重复的会被删除,可以使用`unionAll()`返回所有结果集，包含重复数据。**
+```php
+   // select `id`,`username` from `tb_user`   UNION select `uid`,`username` from `tb_admin`
+   DBquery::table('user')->union(
+      DBquery::table('admin')->select('uid','username')
+   )->select('id','username')->get();
+
+```
 ---
 ## DBquery::count(stirng|int $column,string $alias)
 聚合函数count 第一个参数为查询字段,第二个参数为别名
@@ -345,11 +354,11 @@ where not between 子句 用法与whereNotBetween相同,仅在多个使用时使
 
 ```
 ---
-## DBquery::toSql(int|bool $debug)
-调试功能 默认不生效,需要传入true值或者1时调用 get(),find(),delete(),update(),insert()等具体获取值时返回sql语句
+## DBquery::toSql(bool $debug)
+调试功能 默认生效,传入false值不会生效 get(),find(),delete(),update(),insert()等具体获取值时返回sql语句
 ```php
    // 最后返回的是sql语句,并不会真正的执行到
-   DBquery::table('user')->select('id')->toSql(1)->get();
+   DBquery::table('user')->select('id')->toSql()->get();
 ```
 ---
 ## DBquery::beginTransaction()

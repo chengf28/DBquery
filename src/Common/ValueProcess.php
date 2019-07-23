@@ -1,5 +1,7 @@
 <?php
+
 namespace DBquery\Common;
+
 /**
  * 处理字段
  * @author chengf28 <chengf_28@163.com>
@@ -13,25 +15,21 @@ trait ValueProcess
      * @return string|array
      * God Bless the Code
      */
-    private function disposeAlias( $column )
+    private function disposeAlias($column)
     {
-        if (is_array($column)) 
-        {
-            return array_map(function($value)
-            {
+        if (is_array($column)) {
+            return array_map(function ($value) {
                 return $this->disposeAlias($value);
-            },$column);
+            }, $column);
         }
 
-        if ($column instanceof \DBquery\QueryStr ) 
-        {
+        if ($column instanceof \DBquery\QueryStr) {
             return $column->get();
         }
 
-        if (strpos($column , ' as ')) 
-        {
-            list($name,$alias) = explode(' as ',$column);
-            return $this->disposeCommon($name)." as ".$this->disposeCommon($alias);
+        if (strpos($column, ' as ')) {
+            list($name, $alias) = explode(' as ', $column);
+            return $this->disposeCommon($name) . " as " . $this->disposeCommon($alias);
         }
         return $this->disposeCommon($column);
     }
@@ -42,16 +40,14 @@ trait ValueProcess
      * @return string
      * God Bless the Code
      */
-    private function disposeCommon( $key )
+    private function disposeCommon($key)
     {
-        if ($key == '*')
-        {
+        if ($key == '*') {
             return $key;
         }
-        return implode('.',array_map(function($item)
-        {
+        return implode('.', array_map(function ($item) {
             return "`$item`";
-        },explode('.',$key)));
+        }, explode('.', $key)));
     }
 
     /**
@@ -60,24 +56,21 @@ trait ValueProcess
      * @return string|array
      * God Bless the Code
      */
-    private function disposeString( $column )
+    private function disposeString($column)
     {
-        if (is_array($column)) 
-        {
-            return array_map(function($value)
-            {
+        if (is_array($column)) {
+            return array_map(function ($value) {
                 return $this->disposeString($value);
-            },$column);
+            }, $column);
         }
 
-        if ($column instanceof \DBquery\QueryStr ) 
-        {
+        if ($column instanceof \DBquery\QueryStr) {
             return $column->get();
         }
 
         return $this->disposeCommon($column);
     }
-    
+
     /**
      * 将值转换成占位符
      * @param array $replace
@@ -85,28 +78,26 @@ trait ValueProcess
      * @return string
      * God Bless the Code
      */
-    private function disposePlaceholder( $replace , string $operator = "?")
+    private function disposePlaceholder($replace, string $operator = "?")
     {
-        if (is_array($replace))
-        {
-            return implode(', ',array_fill(0,count($replace),$operator));
+        if (is_array($replace)) {
+            return implode(', ', array_fill(0, count($replace), $operator));
         }
         return '?';
     }
-    
+
     /**
      * 降维数组
      * @param array $input
      * @return array
      * God Bless the Code
      */
-    private function disposeValueArrayDimension( array $input )
+    private function disposeValueArrayDimension(array $input)
     {
         $output = [];
-        foreach ($input as $value) 
-        {
+        foreach ($input as $value) {
             ksort($value);
-            $output = array_merge($output ,array_values($value) );
+            $output = array_merge($output, array_values($value));
         }
         return $output;
     }
