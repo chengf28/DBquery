@@ -1,7 +1,8 @@
 {
     "name": "chengf28/dbquery",
+    "description": "a Simple Mysql Query Builder",
     "type": "library",
-    "license": "MIT",
+    "license": "GPL-3.0",
     "authors": [
         {
             "name": "chengf28",
@@ -12,6 +13,7 @@
         "php": ">=7.1.0"
     },
     "require-dev": {
+        "nesbot/carbon": "^2.16"
     },
     "autoload": {
         "psr-4": {
