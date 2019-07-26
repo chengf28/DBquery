@@ -1315,7 +1315,7 @@ class QueryBuilder
         if ($this->isUnion()) {
             return $this->unionQuerys;
         }
-        return $this->query;
+        return $this->query ?: [];
     }
 
     /**

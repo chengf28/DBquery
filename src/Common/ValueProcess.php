@@ -64,7 +64,7 @@ trait ValueProcess
             }, $column);
         }
 
-        if ($column instanceof \DBquery\QueryStr) {
+        if ($column instanceof QueryStr) {
             return $column->get();
         }
 
