@@ -1,3 +1,6 @@
+#### 注意! master或其他分支持续更新中，可能存在bug。请下载 releases 或 composer 安装到您的项目中;
+#### Note! The master or branches are constantly being updated and may be buggy. Download releases or install by composer for your project please;
+
 # [DBquery][homepage]
 简单的MySql查询构造器
 
