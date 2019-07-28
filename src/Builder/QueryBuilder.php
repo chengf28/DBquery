@@ -107,7 +107,6 @@ class QueryBuilder
      */
     protected $lock = false;
 
-
     /**
      * union字句
      * @var array
@@ -115,9 +114,38 @@ class QueryBuilder
      */
     protected $unions = [];
 
-    protected $unionQuerys = [];
+    /**
+     * update字段存入值
+     * @var array
+     * Real programmers don't read comments, novices do
+     */
+    protected $updates;
 
+    protected static $query_sequence = [
+        'union',
+        'select',
+        'join',
+        'where',
+        'group',
+        'having',
+        'order',
+        'limit',
+        'lock',
+    ];
 
+    protected static $delete_sequence = [
+        'delete',
+        'join',
+        'where',
+        'limit',
+    ];
+
+    protected static $update_sequence = [
+        'update',
+        'where',
+        'order',
+        'limit',
+    ];
 
     /**
      * 构造函数,依赖注入PDO底层
@@ -188,7 +216,6 @@ class QueryBuilder
     #-----------------------------
     # 插入
     #-----------------------------
-
     /**
      * 插入数据,返回受影响行数
      * @param array $insert
@@ -249,7 +276,8 @@ class QueryBuilder
             $this->where('id', $id);
         }
         return $this->run(
-            $this->completeDelete($this->getWheres(), $this->getQuerys()),
+            $this->completeSql(self::$delete_sequence),
+            // $this->completeDelete($this->getWheres(), $this->getQuerys()),
             $this->getBinds(),
             $this->isWrite(true),
             function ($sth) {
@@ -272,9 +300,13 @@ class QueryBuilder
             throw new \InvalidArgumentException("It's empty data to update");
         }
         ksort($update);
+        $this->updates = $update;
+        // 将0类型的binds重置;
+        $this->binds[0] = $this->megreValues($this->getBinds(0), array_values($update));
+
         return $this->run(
-            $this->completeUpdate($update, $this->getWheres()),
-            $this->megreValues($this->getBinds(), array_values($update)),
+            $this->completeSql(self::$update_sequence),
+            $this->getBinds(),
             $this->isWrite(true),
             function ($sth) {
                 return $sth->rowCount();
@@ -314,12 +346,7 @@ class QueryBuilder
     public function getByGenerator()
     {
         return $this->run(
-            $this->completeSelect(
-                $this->getColums(),
-                $this->getWheres(),
-                $this->getJoins(),
-                $this->getQuerys()
-            ),
+            $this->completeSql(self::$query_sequence),
             $this->getBinds(),
             $this->isWrite(false),
             function ($sth) {
@@ -336,7 +363,7 @@ class QueryBuilder
     public function select($columns = ['*'])
     {
         $columns       = is_array($columns) ? $columns : func_get_args();
-        $this->columns = array_merge($this->columns, $columns);
+        $this->columns = array_merge($this->getColums(), $columns);
         return $this;
     }
 
@@ -372,12 +399,7 @@ class QueryBuilder
     protected function getCommon()
     {
         return $this->run(
-            $this->completeSelect(
-                $this->getColums(),
-                $this->getWheres(),
-                $this->getJoins(),
-                $this->getQuerys()
-            ),
+            $this->completeSql(self::$query_sequence),
             $this->getBinds(),
             $this->isWrite(false),
             function ($sth) {
@@ -466,106 +488,7 @@ class QueryBuilder
         return $this;
     }
 
-    #-----------------------------
-    # 其他
-    #-----------------------------
 
-    public function union(\DBquery\Builder\QueryBuilder $query)
-    {
-        $this->unions[] = [$query, 'UNION'];
-        return $this;
-    }
-
-    public function unionAll(\DBquery\Builder\QueryBuilder $query)
-    {
-        $this->unions[] = [$query, 'UNION ALL'];
-        return $this;
-    }
-
-
-    /**
-     * 添加limit字段
-     * @param int $start
-     * @param int $end
-     * @return \DBquery\Builder\QueryBuilder
-     * God Bless the Code
-     */
-    public function limit(int $offset = 1, int $max = null)
-    {
-        if (!$this->isUnion()) {
-            $this->query['4limit'] = is_null($max) ? [$offset] : [$offset, $max];
-        } else {
-            $this->unionQuerys['4limit'] = is_null($max) ? [$offset] : [$offset, $max];
-        }
-        return $this;
-    }
-
-    /**
-     * 处理order by 
-     * @param string $key
-     * @param string $order
-     * @return \DBquery\Builder\QueryBuilder
-     * God Bless the Code
-     */
-    public function orderBy(string $key, string $order)
-    {
-        if (!$this->isUnion()) {
-            $this->query['3order'][trim($key)] = trim($order);
-        } else {
-            $this->unionQuerys['3order'][trim($key)] = trim($order);
-        }
-        return $this;
-    }
-
-    /**
-     * 处理 `having` 语句
-     * @param array|string|callable $columns
-     * @param string $operator
-     * @param string $values
-     * @param string $link
-     * @return \DBquery\Builder\QueryBuilder
-     * Real programmers don't read comments, novices do
-     */
-    public function having($columns, $operator = null, $values = '',  string $link = 'and')
-    {
-        $builder = new QueryBuilder($this->getConnect());
-        $builder->where($columns, $operator, $values, $link);
-        $this->query['2having'] = $builder->getWheres();
-        $this->setBinds($builder->getBinds(), 1);
-        unset($builder);
-        return $this;
-    }
-
-    public function orHaving($columns, $operator = null, $values = '')
-    {
-        return $this->having($columns, $operator, $values, 'or');
-    }
-
-    public function havingBetween(string $columns, array $values, string $link = 'and', bool $boolean = true)
-    {
-        $builder = new QueryBuilder($this->getConnect());
-        $builder->whereBetween($columns, $values, $link, $boolean);
-        $this->query['2having'] = $builder->getWheres();
-        $this->setBinds($builder->getBinds(), 1);
-        unset($builder);
-        return $this;
-    }
-
-
-    /**
-     * 处理 group by 
-     * @return \DBquery\Builder\QueryBuilder
-     * God Bless the Code
-     */
-    public function groupBy()
-    {
-        if (!$this->isUnion()) {
-            $this->query['1group'] = func_get_args();
-        } else {
-            $this->unionQuerys['1group'] = func_get_args();
-        }
-        return $this;
-    }
 
     #-----------------------------
     # 聚合类
@@ -900,8 +823,6 @@ class QueryBuilder
         return $this;
     }
 
-    
-
     /**
      * 处理数组类型column
      * @param array $columns
@@ -942,9 +863,208 @@ class QueryBuilder
         return call_user_func($data, $this);
     }
 
+
+    #-----------------------------
+    # 其他
+    #-----------------------------
+
+    public function union(\DBquery\Builder\QueryBuilder $query)
+    {
+        $this->unions[] = [$query, 'UNION'];
+        return $this;
+    }
+
+    public function unionAll(\DBquery\Builder\QueryBuilder $query)
+    {
+        $this->unions[] = [$query, 'UNION ALL'];
+        return $this;
+    }
+
+    /**
+     * 处理 group by 
+     * @return \DBquery\Builder\QueryBuilder
+     * God Bless the Code
+     */
+    public function groupBy()
+    {
+        $this->groups = func_get_args();
+        return $this;
+    }
+
+    /**
+     * 处理order by 
+     * @param string $key
+     * @param string $order
+     * @return \DBquery\Builder\QueryBuilder
+     * God Bless the Code
+     */
+    public function orderBy(string $key, string $order)
+    {
+        $this->orders[trim($key)] = trim($order);
+        return $this;
+    }
+
+    /**
+     * 添加limit字段
+     * @param int $start
+     * @param int $end
+     * @return \DBquery\Builder\QueryBuilder
+     * God Bless the Code
+     */
+    public function limit(int $offset = 1, int $max = null)
+    {
+        $this->limits = is_null($max) ? [$offset] : [$offset, $max];
+        return $this;
+    }
+
+    /**
+     * 处理 `having` 语句
+     * @param array|string|callable $columns
+     * @param string $operator
+     * @param string $values
+     * @param string $link
+     * @return \DBquery\Builder\QueryBuilder
+     * Real programmers don't read comments, novices do
+     */
+    public function having($columns, $operator = null, $values = '',  string $link = 'and')
+    {
+        return $this->havingCommon('where', [$columns, $operator, $values, $link]);
+    }
+
+    /**
+     * `orHaving`
+     * @param array|string|callable $columns
+     * @param string $operator
+     * @param string $values
+     * @return void
+     * Real programmers don't read comments, novices do
+     */
+    public function orHaving($columns, $operator = null, $values = '')
+    {
+        return $this->having($columns, $operator, $values, 'or');
+    }
+
+    /**
+     * `having between`
+     * @param string $columns
+     * @param array $values
+     * @param string $link
+     * @param bool $boolean
+     * @return \DBquery\Builder\QueryBuilder
+     * Real programmers don't read comments, novices do
+     */
+    public function havingBetween(string $columns, array $values, string $link = 'and', bool $boolean = true)
+    {
+        return $this->havingCommon('whereBetween', [$columns, $values, $link, $boolean]);
+    }
+
+    /**
+     * `orHavingBetween`
+     * @param string $columns
+     * @param array $values
+     * @return \DBquery\Builder\QueryBuilder
+     * Real programmers don't read comments, novices do
+     */
+    public function orHavingBetween(string $columns, array $values)
+    {
+        return $this->havingBetween($columns, $values, 'or');
+    }
+
+    /**
+     * `havingNotBetween`
+     * @param string $columns
+     * @param array $values
+     * @return \DBquery\Builder\QueryBuilder
+     * Real programmers don't read comments, novices do
+     */
+    public function havingNotBetween(string $columns, array $values)
+    {
+        return $this->havingBetween($columns, $values, 'and', false);
+    }
+
+    /**
+     * `orHavingNotBetween`
+     * @param string $columns
+     * @param array $values
+     * @return \DBquery\Builder\QueryBuilder
+     * Real programmers don't read comments, novices do
+     */
+    public function orHavingNotBetween(string $columns, array $values)
+    {
+        return $this->havingBetween($columns, $values, 'or', false);
+    }
+
+    /**
+     * `havingIn`
+     * @param string $columns
+     * @param array $values
+     * @param string $link
+     * @param bool $boolean
+     * @return \DBquery\Builder\QueryBuilder
+     * Real programmers don't read comments, novices do
+     */
+    public function havingIn(string $columns, array $values, string $link = 'and', bool $boolean = true)
+    {
+        return $this->havingCommon('whereIn', [$columns, $values, $link, $boolean]);
+    }
+
+    /**
+     * `havingNotIn`
+     * @param string $columns
+     * @param array $values
+     * @return \DBquery\Builder\QueryBuilder
+     * Real programmers don't read comments, novices do
+     */
+    public function havingNotIn(string $columns, array $values)
+    {
+        return $this->havingIn($columns, $values, 'and', false);
+    }
+
+    /**
+     * `orHavingNotIn`
+     * @param string $columns
+     * @param array $values
+     * @return \DBquery\Builder\QueryBuilder
+     * Real programmers don't read comments, novices do
+     */
+    public function orHavingNotIn(string $columns, array $values)
+    {
+        return $this->havingIn($columns, $values, 'or', false);
+    }
+
+    /**
+     * `orHavingIn`
+     * @param string $columns
+     * @param array $values
+     * @return \DBquery\Builder\QueryBuilder
+     * Real programmers don't read comments, novices do
+     */
+    public function orHavingIn(string $columns, array $values)
+    {
+        return $this->havingIn($columns, $values, 'or');
+    }
+
+    /**
+     * having语句公共处理部分
+     * @param string $method_name
+     * @param array $args
+     * @return \DBquery\Builder\QueryBuilder
+     * Real programmers don't read comments, novices do
+     */
+    private function havingCommon(string $method_name, array $args)
+    {
+        $builder = new QueryBuilder($this->getConnect());
+        $builder->$method_name(...$args);
+        $this->havings = $builder->getWheres();
+        $this->setBinds($builder->getBinds(), 1);
+        unset($builder);
+        return $this;
+    }
+
     #-----------------------------
     # 获取到SQL语句
     #-----------------------------
+
     /**
      * 获取插入Sql
      * @param array $insert
@@ -977,54 +1097,43 @@ class QueryBuilder
 
     /**
      * 获取 update 类型的SQL语句
-     * @param array $update
-     * @param array $wheres
      * @return string
      * God Bless the Code
      */
-    private function completeUpdate(array $update, array $wheres)
+    private function completeUpdate()
     {
-        // 处理更新字段
-        $sql = trim(array_reduce(array_keys($update), function ($carry, $item) {
+        return "update {$this->getTable()} set " . trim(array_reduce(array_keys($this->updates), function ($carry, $item) {
             return $carry .= " {$this->disposeAlias($item)} = {$this->disposePlaceholder($item)} ,";
         }), ',');
-
-        return "update {$this->getTable()} set {$sql}{$this->completeWhere($wheres)}";
     }
 
     /**
      * 获取删除sql
-     * @param array $wheres
-     * @param array $query
      * @return string
      * God Bless the Code
      */
-    private function completeDelete(array $wheres, array $query = [])
+    private function completeDelete()
     {
-        return "delete from {$this->getTable()}{$this->completeWhere($wheres)}{$this->completeClause($query)}";
+        return 'delete from ' . $this->getTable();
     }
 
     /**
      * 获取 select 类型的SQL语句
-     * @param array $selects
-     * @param array $wheres
      * @return string
      * God Bless the Code
      */
-    private function completeSelect(array $selects = [], array $wheres, array $joins = [], array $query = [])
+    private function completeSelect()
     {
+        $selects = $this->getColums();
         if (empty($selects)) {
             $selects = ['*'];
         }
-        $select = implode(',', $this->disposeAlias($selects));
-        $sql    = '';
-        if ($this->isUnion()) {
-            $sql = $this->completeUnion($this->unions);
-        }
-        return $sql . "select {$select} from {$this->getTable()}" .
-            $this->completeJoin($joins) .
-            $this->completeWhere($wheres) .
-            $this->completeClause($query) . (is_null($this->lock) ?: '' . trim($this->lock));
+        return "select " . implode(',', $this->disposeAlias($selects)) . ' from ' . $this->getTable();
+        // if ($this->isUnion()) {
+        //     $sql = $this->completeUnion($this->unions);
+        // }
+        // return $sql . "select {$select} from {$this->getTable()}" .
+        //     $this->completeClause() . (is_null($this->lock) ?: '' . trim($this->lock));
     }
 
     /**
@@ -1032,22 +1141,33 @@ class QueryBuilder
      * @return string
      * God Bless the Code
      */
-    private function completeWhere(array $wheres)
+    private function completeWhere()
     {
-        if ($sql = $this->completeWhereDispatch($wheres)) {
+        if ($sql = $this->completeWhereDispatch($this->getWheres())) {
             return ' where' . $sql;
         }
         return '';
     }
 
-    private function completeHaving(array $havings)
+    /**
+     * 执行 having 语句
+     * @return string
+     * Real programmers don't read comments, novices do
+     */
+    private function completeHaving()
     {
-        if ($sql = $this->completeWhereDispatch($havings)) {
-            return 'having' . $sql;
+        if ($sql = $this->completeWhereDispatch($this->getHavings())) {
+            return ' having' . $sql;
         }
         return '';
     }
 
+    /**
+     * 分配where字句到对应的函数中处理
+     * @param array $wheres
+     * @return string
+     * Real programmers don't read comments, novices do
+     */
     private function completeWhereDispatch(array $wheres)
     {
         if (empty($wheres)) {
@@ -1060,6 +1180,7 @@ class QueryBuilder
         });
         return preg_replace('/and|or/', '', ltrim($str), 1);
     }
+
     /**
      * 基础类型的where Sql 获取
      * @param array $where
@@ -1105,65 +1226,58 @@ class QueryBuilder
     }
 
     /**
-     * 处理`limit`,`group by`,`order by` 字句
-     * @param array $query
-     * @return void
+     * 按照执行顺序执行获取到对应的SQl
+     * @param array $sequence
+     * @return string
      * God Bless the Code
      */
-    private function completeClause(array $query = [])
+    private function completeSql(array $sequence)
     {
-        if (empty($query)) {
-            return '';
+        $sql = '';
+        foreach ($sequence as $method_name) {
+            $sql .= $this->{'complete' . ucfirst($method_name)}();
         }
-        ksort($query);
-        foreach ($query as $key => &$value) {
-            $value = $this->{'complete' . ucfirst(substr($key, 1))}($value);
-        }
-        // 删除引用
-        unset($value);
-        return array_reduce($query, function ($carry, $item) {
-            return $carry .= ' ' . $item;
-        });
+        return $sql;
     }
 
     /**
      * 获取 limit 类型的SQL语句
-     * @param array $limit
      * @return string
      * God Bless the Code
      */
-    private function completeLimit(array $limit = [])
+    private function completeLimit()
     {
+        $limit = $this->getLimits();
         if (empty($limit)) {
             return '';
         }
-        return "limit " . implode(',', $limit);
+        return " limit " . implode(',', $limit);
     }
 
     /**
      * 获取 group by 类型的SQL语句
-     * @param array $group
      * @return string
      * God Bless the Code
      */
-    private function completeGroup(array $group = [])
+    private function completeGroup()
     {
+        $group = $this->getGrounps();
         if (empty($group)) {
             return '';
         }
-        return "group by " . implode(', ', array_map(function ($value) {
+        return " group by " . implode(', ', array_map(function ($value) {
             return $this->disposeAlias($value);
         }, $group));
     }
 
     /**
      * 完成 `order by` 语句
-     * @param array $order
      * @return string
      * Real programmers don't read comments, novices do
      */
-    private function completeOrder(array $order = [])
+    private function completeOrder()
     {
+        $order = $this->getOrders();
         if (empty($order)) {
             return "";
         }
@@ -1172,17 +1286,17 @@ class QueryBuilder
             $value = "{$this->disposeAlias($key)} {$value}";
         }
         unset($value);
-        return "order by " . implode(',', $order);
+        return " order by " . implode(',', $order);
     }
 
     /**
      * 完成`join`语句
-     * @param array $joins
      * @return string
      * Real programmers don't read comments, novices do
      */
-    private function completeJoin(array $joins = [])
+    private function completeJoin()
     {
+        $joins = $this->getJoins();
         if (empty($joins)) {
             return '';
         }
@@ -1195,15 +1309,23 @@ class QueryBuilder
 
     /**
      * 完成`union`语句
-     * @param array $unions
      * @return string
      * Real programmers don't read comments, novices do
      */
-    private function completeUnion(array $unions = [])
+    private function completeUnion()
     {
+        if (empty($unions = $this->unions)) {
+            unset($unions);
+            return '';
+        }
         return array_reduce($unions, function ($sql, $query) {
             return $sql .= trim($query[0]->toSql(true)->get()) . ' ' . $query[1] . ' ';
         }, '');
+    }
+
+    private function completeLock()
+    {
+        return $this->lock ?: '';
     }
 
     #-----------------------------
@@ -1219,16 +1341,6 @@ class QueryBuilder
     protected function isOperator(string $operator)
     {
         return in_array(strtoupper($operator), self::operator);
-    }
-
-    /**
-     * 判断是否Union模式
-     * @return bool
-     * Real programmers don't read comments, novices do
-     */
-    protected function isUnion()
-    {
-        return count($this->unions) === 0 ? false : true;
     }
 
     /**
@@ -1255,9 +1367,6 @@ class QueryBuilder
     {
         return $this->wheres ?: [];
     }
-
-    
-
 
     /**
      * 获取到connect类
@@ -1289,12 +1398,16 @@ class QueryBuilder
 
     /**
      * 获取到绑定数据
+     * @param int $type
      * @return array
      * Real programmers don't read comments, novices do
      */
-    public function getBinds()
+    public function getBinds(int $type = null)
     {
         $binds = [];
+        if (!is_null($type)) {
+            return isset($this->binds[$type]) ? $this->binds[$type] : [];
+        }
         if (isset($this->binds[0])) {
             $binds = $this->binds[0];
         }
@@ -1417,8 +1530,6 @@ class QueryBuilder
         return $this;
     }
 
-    
-
     /**
      * 排他锁
      * @return \DBquery\Builder\QueryBuilder
@@ -1426,7 +1537,7 @@ class QueryBuilder
      */
     public function lockForUpdate()
     {
-        $this->lock = 'for update';
+        $this->lock = ' for update';
         return $this->useWrite();
     }
 
@@ -1437,7 +1548,7 @@ class QueryBuilder
      */
     public function lockShare()
     {
-        $this->lock = 'lock in share mode';
+        $this->lock = ' lock in share mode';
         return $this->useWrite();
     }
 }
