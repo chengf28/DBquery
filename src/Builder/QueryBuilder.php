@@ -1318,9 +1318,15 @@ class QueryBuilder
             unset($unions);
             return '';
         }
-        return array_reduce($unions, function ($sql, $query) {
+        $binds = [];
+        $sql = array_reduce($unions, function ($sql, $query) use (&$binds)
+        {
+            $binds = array_merge($binds,$query[0]->getBinds());
             return $sql .= trim($query[0]->toSql(true)->get()) . ' ' . $query[1] . ' ';
         }, '');
+        // 重置binds[0]数组
+        $this->binds[0] = array_merge($binds,$this->getBinds(0));
+        return $sql;
     }
 
     private function completeLock()
