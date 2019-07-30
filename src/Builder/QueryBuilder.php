@@ -63,13 +63,32 @@ class QueryBuilder
      */
     protected $query;
 
-
+    /**
+     * gourps需要字段
+     * @var array
+     * Real programmers don't read comments, novices do
+     */
     protected $groups;
 
+    /**
+     * having需要字段
+     * @var array
+     * Real programmers don't read comments, novices do
+     */
     protected $havings;
 
+    /**
+     * order需要字段
+     * @var array
+     * Real programmers don't read comments, novices do
+     */
     protected $orders;
 
+    /**
+     * limit需要字段
+     * @var array
+     * Real programmers don't read comments, novices do
+     */
     protected $limits;
 
     /**
@@ -1319,13 +1338,12 @@ class QueryBuilder
             return '';
         }
         $binds = [];
-        $sql = array_reduce($unions, function ($sql, $query) use (&$binds)
-        {
-            $binds = array_merge($binds,$query[0]->getBinds());
+        $sql = array_reduce($unions, function ($sql, $query) use (&$binds) {
+            $binds = array_merge($binds, $query[0]->getBinds());
             return $sql .= trim($query[0]->toSql(true)->get()) . ' ' . $query[1] . ' ';
         }, '');
         // 重置binds[0]数组
-        $this->binds[0] = array_merge($binds,$this->getBinds(0));
+        $this->binds[0] = array_merge($binds, $this->getBinds(0));
         return $sql;
     }
 

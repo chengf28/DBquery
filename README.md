@@ -4,6 +4,8 @@
 # [DBquery][homepage]
 简单的MySql查询构造器
 
+A simple Mysql query builder
+
 ## [BUG反馈及建议][issues]
 github issues: <https://github.com/chengf28/DBquery/issues>
 ## 添加 Install
@@ -11,7 +13,12 @@ github issues: <https://github.com/chengf28/DBquery/issues>
 
 直接在项目根目录中执行`composer require chengf28/dbquery` , 即可加载最新版本到本地项目vender/chengf28目录中(如果目录中没有composer.json 会自动生成)
 
+execute `composer require chengf28/dbquery` command in terminal;
+
 或者在项目中的composer.json 添加
+
+or add configure in composer.json
+
 ```json
 {
     "require": {
@@ -19,7 +26,11 @@ github issues: <https://github.com/chengf28/DBquery/issues>
     }
 }
 ```
+
 然后执行 `composer update`
+
+the execute `composer update`
+
 
 * git:
 ```sh
@@ -47,7 +58,7 @@ DBquery::table('table_name')->all();
 ## 配置 Config:
 > 此处仅供参数,具体配置内容以实际需求为准;
 全局调用一次即可
-* 基本配置
+* 基本配置 Base Configure
 ```php
 $config = [
     'dbtype' => 'MYSQL',
@@ -59,7 +70,7 @@ $config = [
 ];    
 ```
 
-* 读写分离
+* 读写分离 Reading and writing separation
 ```php
 $config = [
     // 预留配置,可不填写,目前仅支持mysql
