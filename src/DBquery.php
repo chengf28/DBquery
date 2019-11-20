@@ -109,7 +109,7 @@ class DBquery
 					)
 				);
 			} else {
-				$connect->setWritePdo($readPdo);
+				$connect->setWrite($readPdo);
 			}
 			return $connect;
 		} catch (\PDOException $e) {
